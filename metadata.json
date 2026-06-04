@@ -1,0 +1,6 @@
+{
+  "name": "Mystic Signal",
+  "description": "A secret digital keepsake gift box for my girlfriend featuring interactive memories, stories, comfort envelopes, and coupons.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
