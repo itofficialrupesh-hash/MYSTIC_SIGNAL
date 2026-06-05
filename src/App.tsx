@@ -73,11 +73,11 @@ export default function App() {
         lettersLength: DEFAULT_LETTERS.length
       });
 
-      const savedDefaultsSign = localStorage.getItem('love_defaults_signature_v6');
+      const savedDefaultsSign = localStorage.getItem('love_defaults_signature_v20');
 
       if (savedDefaultsSign !== currentDefaultsSign) {
         // Code defaults have been edited in defaultData.ts! Reset localStorage keys so updates take effect immediately.
-        localStorage.setItem('love_defaults_signature_v6', currentDefaultsSign);
+        localStorage.setItem('love_defaults_signature_v20', currentDefaultsSign);
         
         localStorage.removeItem('love_config');
         localStorage.removeItem('love_photos');
@@ -95,16 +95,19 @@ export default function App() {
 
       if (savedConfig) {
         const parsed = JSON.parse(savedConfig);
+        // Hydrate any new default configs (such as profileLogoUrl or specialDateHint if undefined)
+        const hydrated = { ...DEFAULT_CONFIG, ...parsed };
+        
         // Automatic sweet music track migration to stable fail-safe SoundHelix/YouTube soundtrack
-        if (!parsed.bgMusicUrl || parsed.bgMusicUrl.includes("mixkit") || parsed.bgMusicUrl.includes("codeskulptor") || parsed.bgMusicUrl.includes("google") || parsed.bgMusicUrl.includes("SoundHelix") || !parsed.bgMusicUrl.includes("za6peqgbPUgB7mj4")) {
-          parsed.bgMusicUrl = "https://youtu.be/2_i3Iw0rZPo?si=za6peqgbPUgB7mj4";
+        if (!hydrated.bgMusicUrl || hydrated.bgMusicUrl.includes("mixkit") || hydrated.bgMusicUrl.includes("codeskulptor") || hydrated.bgMusicUrl.includes("google") || hydrated.bgMusicUrl.includes("SoundHelix") || !hydrated.bgMusicUrl.includes("za6peqgbPUgB7mj4")) {
+          hydrated.bgMusicUrl = "https://youtu.be/2_i3Iw0rZPo?si=za6peqgbPUgB7mj4";
           try {
-            localStorage.setItem('love_config', JSON.stringify(parsed));
+            localStorage.setItem('love_config', JSON.stringify(hydrated));
           } catch (storageErr) {
             console.warn("Storage write failed:", storageErr);
           }
         }
-        setConfig(parsed);
+        setConfig(hydrated);
       }
       if (savedPhotos) setPhotos(JSON.parse(savedPhotos));
       if (savedStory) setStory(JSON.parse(savedStory));
