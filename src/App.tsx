@@ -73,11 +73,11 @@ export default function App() {
         lettersLength: DEFAULT_LETTERS.length
       });
 
-      const savedDefaultsSign = localStorage.getItem('love_defaults_signature_v2');
+      const savedDefaultsSign = localStorage.getItem('love_defaults_signature_v6');
 
       if (savedDefaultsSign !== currentDefaultsSign) {
         // Code defaults have been edited in defaultData.ts! Reset localStorage keys so updates take effect immediately.
-        localStorage.setItem('love_defaults_signature_v2', currentDefaultsSign);
+        localStorage.setItem('love_defaults_signature_v6', currentDefaultsSign);
         
         localStorage.removeItem('love_config');
         localStorage.removeItem('love_photos');
