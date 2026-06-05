@@ -46,7 +46,7 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
           videoId: activeYtId,
           playerVars: {
             autoplay: 1,
-            mute: 0, // Request unmuted playback immediately if browser permissions allow
+            mute: 1, // Start muted so modern browsers ALWAYS allow instantaneous automated buffering and play!
             controls: 1,
             loop: 1,
             playlist: activeYtId,
@@ -63,30 +63,27 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
               event.target.setVolume(80); // Set perfect romantic volume
               
               try {
-                event.target.unMute();
                 event.target.playVideo();
-                setIsMuted(false);
-                setPlaybackStatus("Playing Live 🔊");
+                if (userInteractedRef.current) {
+                  unmuteAndPlay();
+                } else {
+                  setPlaybackStatus("Autoplay Ready ✨");
+                }
               } catch (e) {
                 setPlaybackStatus("Ready (Tap to play) 💖");
-              }
-
-              // Instant unmute if the user already interacted
-              if (userInteractedRef.current) {
-                unmuteAndPlay();
               }
             },
             onStateChange: (event: any) => {
               const state = event.data;
               if (state === window.YT.PlayerState.PLAYING) {
                 const player = event.target;
-                try {
-                  player.unMute();
-                  player.setVolume(80);
-                } catch (e) {}
-                setIsMuted(false);
-                setPlaybackStatus("Playing Live 🔊");
-                userInteractedRef.current = true;
+                if (!isMuted) {
+                  try {
+                    player.unMute();
+                    player.setVolume(80);
+                  } catch (e) {}
+                  setPlaybackStatus("Playing Live 🔊");
+                }
               } else if (state === window.YT.PlayerState.PAUSED) {
                 setPlaybackStatus("Paused");
               } else if (state === window.YT.PlayerState.BUFFERING) {
@@ -126,6 +123,12 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
       }
     }
 
+    // Expose global unmuting function to be triggered on password unlock & screen touches
+    (window as any).__unmuteThemeMusic = () => {
+      userInteractedRef.current = true;
+      unmuteAndPlay();
+    };
+
     const removeListeners = () => {
       window.removeEventListener('click', handleInteraction);
       window.removeEventListener('touchstart', handleInteraction);
@@ -150,6 +153,9 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
 
     return () => {
       removeListeners();
+      try {
+        delete (window as any).__unmuteThemeMusic;
+      } catch (err) {}
     };
   }, []);
 

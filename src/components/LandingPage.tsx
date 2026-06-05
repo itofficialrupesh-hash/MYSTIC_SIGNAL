@@ -81,6 +81,13 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
       return;
     }
 
+    // Unmute background music since the user interacted
+    if (typeof (window as any).__unmuteThemeMusic === 'function') {
+      try {
+        (window as any).__unmuteThemeMusic();
+      } catch (err) {}
+    }
+
     const cuteEmojis = ['💋', '😘', '👩‍❤️‍💋‍👨', '💖', '✨', '🌸', '🦋', '🎈', '💖', '🧁', '💝', '😘', '💋', '💞', '💘', '🧸', '💝', '👩‍❤️‍💋‍👨', '💋', '❤️‍🔥'];
     const randomEmoji = cuteEmojis[Math.floor(Math.random() * cuteEmojis.length)];
     const rect = e.currentTarget.getBoundingClientRect();
@@ -119,6 +126,14 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
       setIsSuccess(true);
       setIsError(false);
       setFeedbackMsg("✨ Correct! Opening our digital love sanctuary...");
+      
+      // Instantly start/unmute background music!
+      if (typeof (window as any).__unmuteThemeMusic === 'function') {
+        try {
+          (window as any).__unmuteThemeMusic();
+        } catch (err) {}
+      }
+
       setTimeout(() => {
         onUnlocked();
       }, 1200);
@@ -295,8 +310,22 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                   type="text"
                   placeholder="DD/MM/YYYY"
                   value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
+                  onChange={(e) => {
+                    setPasswordInput(e.target.value);
+                    if (typeof (window as any).__unmuteThemeMusic === 'function') {
+                      try {
+                        (window as any).__unmuteThemeMusic();
+                      } catch (err) {}
+                    }
+                  }}
+                  onFocus={() => {
+                    setIsFocused(true);
+                    if (typeof (window as any).__unmuteThemeMusic === 'function') {
+                      try {
+                        (window as any).__unmuteThemeMusic();
+                      } catch (err) {}
+                    }
+                  }}
                   onBlur={() => setIsFocused(false)}
                   disabled={isSuccess}
                   maxLength={16}
