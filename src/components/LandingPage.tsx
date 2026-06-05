@@ -24,6 +24,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
   const [showHelpBadge, setShowHelpBadge] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [clickingHearts, setClickingHearts] = useState<ClickEmoji[]>([]);
+  const [isFocused, setIsFocused] = useState(false);
   
   // Birthday countdown state (Target: 25 November)
   const [timeLeft, setTimeLeft] = useState({
@@ -278,24 +279,82 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
             {/* Input box form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="relative">
+                {/* Real hidden input layer */}
                 <input
                   id="special-date-cookie"
                   type="text"
                   placeholder="DD/MM/YYYY"
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
                   disabled={isSuccess}
-                  className={`w-full bg-white/60 border-2 rounded-2xl px-4 py-3 text-center text-lg focus:outline-none placeholder-pink-200 text-pink-600 font-mono tracking-widest transition-all duration-300 ${
-                    isError 
-                      ? 'border-red-400 bg-red-100/30' 
-                      : isSuccess 
-                        ? 'border-emerald-400 bg-emerald-50/50 text-emerald-600' 
-                        : 'border-pink-200 focus:border-pink-400 focus:ring-4 focus:ring-pink-100'
-                  }`}
+                  maxLength={16}
+                  className="absolute inset-0 w-full h-full opacity-0 z-25 cursor-text text-center text-lg focus:outline-none"
+                  autoComplete="off"
                 />
-                {passwordInput && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-pink-300">
-                    <Heart size={16} fill="rgba(239, 68, 68, 0.2)" className="heart-pulsing" />
+                
+                {/* Visual heartbeat overlay masking password letters with hearts */}
+                <div 
+                  className={`w-full bg-white/70 border-2 rounded-2xl px-4 py-3.5 flex items-center justify-center min-h-[58px] transition-all duration-300 relative ${
+                    isError 
+                      ? 'border-red-400 bg-red-100/30 shadow-md animate-space' 
+                      : isSuccess 
+                        ? 'border-emerald-400 bg-emerald-50/60' 
+                        : isFocused
+                          ? 'border-pink-400 ring-4 ring-pink-100/80 bg-white/90 scale-[1.01]'
+                          : 'border-pink-200 hover:border-pink-300'
+                  }`}
+                >
+                  {passwordInput.length === 0 ? (
+                    <span className="text-pink-300/80 font-mono tracking-widest text-base font-semibold select-none">
+                      DD/MM/YYYY
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-1.5 justify-center flex-wrap max-w-[90%]">
+                      {passwordInput.split('').map((_, index) => (
+                        <span 
+                          key={index} 
+                          className="text-pink-500 text-[15px] select-none inline-block filter drop-shadow-[0_1px_2px_rgba(236,72,153,0.3)] animate-glow-heart"
+                          style={{
+                            animationDelay: `${index * 60}ms`
+                          }}
+                        >
+                          ❤️
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {passwordInput && (
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-pink-400 select-none animate-pulse">
+                      <Heart size={14} fill="rgba(244, 63, 94, 0.4)" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Expandable hint matching "Need a hint, my favorite person?" request */}
+              <div className="flex flex-col items-center justify-center gap-2 mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowHint(!showHint);
+                    setFeedbackMsg(null);
+                  }}
+                  className="flex items-center justify-center gap-1.5 text-[11px] font-extrabold text-pink-500 hover:text-pink-600 focus:outline-none cursor-pointer mx-auto transition-colors bg-pink-50/40 hover:bg-pink-50/80 px-3.5 py-1.5 rounded-full border border-pink-100/30"
+                >
+                  <HelpCircle size={13} className="text-pink-400" />
+                  <span>Need a hint, my favorite person?</span>
+                </button>
+
+                {showHint && (
+                  <div 
+                    id="hint-expanded"
+                    className="text-[11px] bg-white/95 text-pink-600 px-3 py-2 rounded-xl border border-pink-200/40 text-center font-semibold animate-fade-in shadow-sm leading-normal flex items-center justify-center gap-1.5 w-full"
+                  >
+                    <span className="text-pink-400 text-xs animate-bounce">💡</span>
+                    <span>{config.specialDateHint || "Enter our special date (e.g. 1122 or the date that started it all) ✨"}</span>
                   </div>
                 )}
               </div>
@@ -319,34 +378,12 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
             </p>
           </div>
 
-          {/* Feedback & Password Hint Drawer */}
-          <div className="mt-6 pt-5 border-t border-pink-100/60 text-center">
+          {/* Feedback Section */}
+          <div className="mt-4 pt-4 border-t border-pink-100/60 text-center">
             {feedbackMsg && (
-              <p className={`text-xs font-semibold mb-3 ${isError ? 'text-red-500' : 'text-pink-600'} animate-pulse`}>
+              <p className={`text-xs font-semibold mb-2 ${isError ? 'text-red-500' : 'text-pink-600'} animate-pulse`}>
                 {feedbackMsg}
               </p>
-            )}
-
-            <button
-              id="help-hint-btn"
-              type="button"
-              onClick={() => {
-                setShowHint(!showHint);
-                setFeedbackMsg(null);
-              }}
-              className="flex items-center justify-center gap-1.5 text-xs font-semibold text-pink-500 hover:text-pink-600 focus:outline-none cursor-pointer mx-auto transition-colors"
-            >
-              <HelpCircle size={14} />
-              <span>Need a hint, my favorite person?</span>
-            </button>
-
-            {showHint && (
-              <div 
-                id="hint-expanded"
-                className="mt-3 text-xs bg-white/80 text-pink-600 p-3 rounded-xl border border-pink-100/50 text-center font-medium animate-fade-in shadow-xs"
-              >
-                ✨ {config.specialDateHint || "Enter our magic key or date!"} ✨
-              </div>
             )}
           </div>
         </div>

@@ -160,6 +160,9 @@ export default function App() {
       {/* Dynamic drifting cute stickers canvas background */}
       <FloatingParticles />
 
+      {/* BACKGROUND MUSIC PLAYER STREAM (Global float controller) */}
+      <MusicPlayer musicUrl={config.bgMusicUrl} />
+
       {/* RISING HEART SHOWER OVERLAY CONTAINER */}
       <div className="fixed inset-x-0 bottom-0 top-0 pointer-events-none z-50 overflow-hidden">
         {heartsList.map((heart) => (
@@ -179,9 +182,6 @@ export default function App() {
           </div>
         ))}
       </div>
-
-      {/* BACKGROUND MUSIC PLAYER STREAM (Global float controller) */}
-      <MusicPlayer musicUrl={config.bgMusicUrl} />
 
       {/* CORE WRAPPERS */}
       {!isUnlocked ? (
@@ -333,6 +333,16 @@ export default function App() {
           onClose={() => setShowAdmin(false)}
         />
       )}
+
+      {/* Eternal Love Footer Signature */}
+      <footer className="w-full text-center py-6 mt-12 mb-4 bg-white/20 backdrop-blur-xs border-t border-pink-100/20 select-none">
+        <p className="text-xs text-pink-600 font-serif font-bold tracking-wider flex items-center justify-center gap-1 drop-shadow-xs">
+          <span>love you cutee 💖</span>
+        </p>
+        <p className="text-[10px] text-pink-400/80 mt-1 uppercase tracking-widest font-mono">
+          Last by Ruu ✨
+        </p>
+      </footer>
 
     </div>
   );
