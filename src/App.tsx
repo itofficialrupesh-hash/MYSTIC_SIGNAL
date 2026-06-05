@@ -14,6 +14,7 @@ import PolaroidGallery from './components/PolaroidGallery';
 import OpenWhenLetters from './components/OpenWhenLetters';
 import SecretRoom from './components/SecretRoom';
 import LovelyLogo from './components/LovelyLogo';
+import NeonTextHeart from './components/NeonTextHeart';
 
 // Types and Defaults
 import { LoveConfig, MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter } from './types';
@@ -405,6 +406,17 @@ export default function App() {
           onClose={() => setShowAdmin(false)}
         />
       )}
+
+
+      {/* Centered Animated Neon Pink Heart & Love You Baby Ji Section */}
+      <div className="relative w-full text-center py-6 z-10 flex flex-col items-center justify-center select-none">
+        <NeonTextHeart logoUrl={config.profileLogoUrl} />
+        <div id="love-you-baby-ji" className="mt-2 px-6 py-3.5 bg-slate-950/70 backdrop-blur-md rounded-2xl border border-pink-500/20 shadow-[0_0_25px_rgba(236,72,153,0.2)] max-w-sm md:max-w-md mx-auto transition-transform duration-300 hover:scale-[1.03]">
+          <p className="text-sm md:text-base font-serif font-extrabold text-pink-300 drop-shadow-[0_0_12px_rgba(236,72,153,0.6)] tracking-wide animate-pulse leading-relaxed">
+            Love You Baby Ji 💗💋🩷🫰🏻🙈🐥🎀
+          </p>
+        </div>
+      </div>
 
       {/* Eternal Love Footer Signature */}
       <footer className="w-full text-center py-6 mt-12 mb-4 bg-slate-950/20 backdrop-blur-xs border-t border-pink-500/10 select-none">
