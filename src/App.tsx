@@ -73,11 +73,11 @@ export default function App() {
         lettersLength: DEFAULT_LETTERS.length
       });
 
-      const savedDefaultsSign = localStorage.getItem('love_defaults_signature_v20');
+      const savedDefaultsSign = localStorage.getItem('love_defaults_signature_v200');
 
       if (savedDefaultsSign !== currentDefaultsSign) {
         // Code defaults have been edited in defaultData.ts! Reset localStorage keys so updates take effect immediately.
-        localStorage.setItem('love_defaults_signature_v20', currentDefaultsSign);
+        localStorage.setItem('love_defaults_signature_v200', currentDefaultsSign);
         
         localStorage.removeItem('love_config');
         localStorage.removeItem('love_photos');
@@ -117,6 +117,21 @@ export default function App() {
       console.warn("Could not read localStorage configurations.", err);
     }
   }, []);
+
+  // Dynamically update browser tab favicon to match the configured profileLogoUrl
+  useEffect(() => {
+    if (config.profileLogoUrl) {
+      const link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+      if (link) {
+        link.href = config.profileLogoUrl;
+      } else {
+        const newLink = document.createElement('link');
+        newLink.rel = 'icon';
+        newLink.href = config.profileLogoUrl;
+        document.head.appendChild(newLink);
+      }
+    }
+  }, [config.profileLogoUrl]);
 
   // Save changes to localStorage helper
   const handleSaveAll = (updated: {
@@ -195,8 +210,13 @@ export default function App() {
   };
 
   return (
-    <div id="app-root-layout" className="relative min-h-screen pb-20 overflow-x-hidden bg-gradient-to-br from-[#FFF5F7] via-[#FDF2F8] to-[#F3E8FF]">
+    <div id="app-root-layout" className="relative min-h-screen pb-20 overflow-x-hidden bg-gradient-to-br from-[#0a0712] via-[#050508] to-[#120a1c] text-zinc-100 transition-all duration-300">
       
+      {/* Glow effects mimicking the logo theme */}
+      <div className="absolute top-10 left-[15%] w-96 h-96 bg-pink-500/10 rounded-full blur-[130px] pointer-events-none select-none z-0" />
+      <div className="absolute top-[40%] right-[10%] w-[450px] h-[450px] bg-purple-500/5 rounded-full blur-[150px] pointer-events-none select-none z-0" />
+      <div className="absolute bottom-20 left-[20%] w-[380px] h-[380px] bg-pink-500/10 rounded-full blur-[120px] pointer-events-none select-none z-0" />
+
       {/* Dynamic drifting cute stickers canvas background */}
       <FloatingParticles />
 
@@ -247,7 +267,7 @@ export default function App() {
                     src={config.profileLogoUrl || "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop"} 
                     alt="Sanctuary Logo" 
                     referrerPolicy="no-referrer"
-                    className="w-12 h-12 relative z-10 rounded-full border-2 border-[#d4af37]/80 object-cover shadow-md group-hover:scale-105 transition-transform duration-300"
+                    className="w-12 h-12 relative z-10 rounded-full border-2 border-pink-500/80 object-cover shadow-md group-hover:scale-105 transition-transform duration-300"
                   />
                   <span className="absolute bottom-0 right-0 z-20 flex h-3.5 w-3.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-80"></span>
@@ -325,7 +345,7 @@ export default function App() {
             {activeTab === 'safekeep' && (
               <div className="space-y-6">
                 <div className="text-center py-4 select-none">
-                  <h3 className="font-serif text-2xl font-bold text-gray-800">My Secret Envelopes</h3>
+                  <h3 className="font-serif text-2xl font-black text-pink-100 drop-shadow-[0_0_15px_rgba(236,72,153,0.3)]">My Secret Envelopes</h3>
                   <p className="text-xs text-gray-400 mt-1 max-w-md mx-auto">
                     Click each capsule, enter our special password date if locked, and unlock the letters I wrote for you.
                   </p>
@@ -387,15 +407,15 @@ export default function App() {
       )}
 
       {/* Eternal Love Footer Signature */}
-      <footer className="w-full text-center py-6 mt-12 mb-4 bg-white/20 backdrop-blur-xs border-t border-pink-100/20 select-none">
-        <p className="text-xs text-pink-600 font-serif font-bold tracking-wider flex items-center justify-center gap-1 drop-shadow-xs">
+      <footer className="w-full text-center py-6 mt-12 mb-4 bg-slate-950/20 backdrop-blur-xs border-t border-pink-500/10 select-none">
+        <p className="text-xs text-pink-400 font-serif font-bold tracking-wider flex items-center justify-center gap-1 drop-shadow-xs">
           <span>love you cutee 💖</span>
         </p>
-        <p className="text-[10px] text-pink-400/80 mt-1 uppercase tracking-widest font-mono">
-          Last by Ruu ✨
-        </p>
-        <p className="text-[10px] text-pink-450/70 mt-1.5 italic font-serif">
+        <p className="text-[10px] text-pink-300/80 mt-1.5 italic font-serif">
           sorry 🥺❤️
+        </p>
+        <p className="text-[9px] text-pink-400/60 mt-1 uppercase tracking-widest font-mono">
+          by your Ruu ✨
         </p>
       </footer>
 

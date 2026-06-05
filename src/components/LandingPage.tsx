@@ -124,7 +124,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
       }, 1200);
     } else {
       setIsError(true);
-      setFeedbackMsg(`❌ Hmm, that magic date doesn't match. Try "${config.specialDate || '1122'}" or look inside!`);
+      setFeedbackMsg(`❌ Hmm, that magic date doesn't match. Please try again!`);
       setTimeout(() => {
         setIsError(false);
       }, 800);
@@ -133,9 +133,9 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
 
   const handleScrapbookItemClick = (itemName: string) => {
     if (itemName.toLowerCase().includes("room") || itemName.toLowerCase().includes("signal")) {
-      setFeedbackMsg(`🔮 Mystic Signal & Secret Room is locked! Enter our magic passcode "${config.specialDate || '1122'}" on the left to broadcast cute cosmic pulses!`);
+      setFeedbackMsg(`🔮 Mystic Signal & Secret Room is locked! Enter our magic passcode on the left to broadcast cute cosmic pulses!`);
     } else {
-      setFeedbackMsg(`🔒 "${itemName}" is locked! Enter our special date "${config.specialDate || '1122'}" on the left to open.`);
+      setFeedbackMsg(`🔒 "${itemName}" is locked! Enter our special date on the left to open.`);
     }
     setIsError(true);
     setTimeout(() => {
@@ -145,10 +145,14 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
 
   return (
     <div 
-      className="relative min-h-[92vh] w-full flex flex-col items-center justify-center p-4 lg:p-8 overflow-hidden bg-gradient-to-br from-[#FFF5F7] via-[#FDF2F8] to-[#F3E8FF] select-none cursor-heart"
+      className="relative min-h-[92vh] w-full flex flex-col items-center justify-center p-4 lg:p-8 overflow-hidden bg-gradient-to-br from-[#0a0712] via-[#050508] to-[#120a1c] text-zinc-100 select-none cursor-heart"
       id="landing-container"
       onClick={handleBackgroundClick}
     >
+      {/* Ambient background glows matching the logo */}
+      <div className="absolute top-[20%] left-[25%] w-[450px] h-[450px] bg-pink-500/10 rounded-full blur-[140px] pointer-events-none select-none z-0" />
+      <div className="absolute bottom-[20%] right-[25%] w-[450px] h-[450px] bg-purple-500/10 rounded-full blur-[140px] pointer-events-none select-none z-0" />
+
       {/* Interactive styles wrapper */}
       <style>{`
         @keyframes popUpDrift {
@@ -225,14 +229,14 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
           <LovelyLogo size="lg" imageUrl={config.profileLogoUrl} />
         </div>
 
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-100/60 border border-pink-200 rounded-full text-pink-600 font-bold text-[10px] uppercase tracking-widest mb-3 animate-bounce">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-950/40 border border-pink-500/30 rounded-full text-pink-300 font-bold text-[10px] uppercase tracking-widest mb-3 animate-bounce shadow-[0_0_10px_rgba(236,72,153,0.15)]">
           <span>💖</span>
           <span>Tap anywhere to spawn cute magic sparkles!</span>
         </div>
-        <h1 className="text-4xl md:text-5xl font-serif text-pink-600 mb-2 font-bold tracking-tight italic">
-          A Special Surprise For {config.coupleNameTwo || 'Mystic Signal'} ❤️
+        <h1 className="text-4xl md:text-5xl font-serif text-pink-250 mb-2 font-black tracking-tight italic drop-shadow-[0_0_16px_rgba(244,63,94,0.35)]">
+          A Special Surprise For <span className="bg-gradient-to-r from-pink-300 via-rose-300 to-pink-200 bg-clip-text text-transparent">{config.coupleNameTwo || 'Mystic Signal'}</span> ❤️
         </h1>
-        <p className="text-purple-500 font-semibold tracking-widest uppercase text-xs">
+        <p className="text-purple-300 font-extrabold tracking-widest uppercase text-xs opacity-90 drop-shadow-[0_0_12px_rgba(168,85,247,0.3)]">
           Only {config.coupleNameTwo || 'Mystic Signal'} can unlock this secret space
         </p>
       </header>
@@ -243,18 +247,18 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
         {/* Left: Password Entrance Card */}
         <div 
           id="landing-glass-container"
-          className={`w-full lg:w-5/12 bg-white/40 backdrop-blur-xl border border-white/60 rounded-[40px] p-8 shadow-2xl flex flex-col justify-between text-center transition-all duration-700 relative ${
+          className={`w-full lg:w-5/12 bg-slate-900/60 backdrop-blur-xl border border-pink-500/20 rounded-[40px] p-8 shadow-2xl flex flex-col justify-between text-center transition-all duration-700 relative ${
             isSuccess ? 'scale-95 rotate-2 opacity-30 pointer-events-none' : 'scale-100 opacity-100'
-          } ${isError ? 'animate-shake border-red-300 bg-red-50/20' : ''}`}
+          } ${isError ? 'animate-shake border-red-500/30 bg-red-950/20' : ''}`}
         >
           <div>
             {/* Cute Teddy Bear Mascot holding a heart / locks */}
             <div className="relative w-full flex flex-col items-center justify-center mb-4 select-none">
               {/* Cute speech bubble from the teddy */}
-              <div className="bg-white/90 border border-pink-200 text-pink-600 font-bold font-serif text-[10px] px-3 py-1.5 rounded-2xl shadow-xs leading-tight transition-transform duration-300 hover:scale-105 flex items-center justify-center gap-1.5 mb-2 animate-pulse">
+              <div className="bg-slate-950/90 border border-pink-500/30 text-pink-300 font-bold font-serif text-[10px] px-3 py-1.5 rounded-2xl shadow-xs leading-tight transition-transform duration-300 hover:scale-105 flex items-center justify-center gap-1.5 mb-2 animate-pulse">
                 <span>🧸</span>
                 <span>Enter our special date to open my heart!</span>
-                <span className="text-pink-500">❤️</span>
+                <span className="text-pink-400">❤️</span>
               </div>
               
               {/* Animated Teddy Emojis & popping heart sparkles */}
@@ -268,17 +272,17 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
               </div>
             </div>
 
-            <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mb-4 mx-auto shadow-inner relative">
-              <div className="absolute inset-0 bg-pink-200/20 rounded-full animate-ping pointer-events-none" />
+            <div className="w-12 h-12 bg-pink-950/50 rounded-full border border-pink-500/30 flex items-center justify-center mb-4 mx-auto shadow-inner relative">
+              <div className="absolute inset-0 bg-pink-500/10 rounded-full animate-ping pointer-events-none" />
               {isSuccess ? (
-                <Unlock className="text-pink-500 w-6 h-6 heart-pulsing" />
+                <Unlock className="text-pink-400 w-6 h-6 heart-pulsing" />
               ) : (
-                <Lock className="text-pink-500 w-6 h-8" />
+                <Lock className="text-pink-400 w-6 h-8" />
               )}
             </div>
             
-            <h2 className="text-xl font-bold font-serif text-gray-800 mb-2">The Vault of Us</h2>
-            <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+            <h2 className="text-xl font-bold font-serif text-pink-100 mb-2">The Vault of Us</h2>
+            <p className="text-xs text-pink-200/70 mb-6 leading-relaxed">
               Enter the date that changed everything for us, or type the secret token! ✨
             </p>
 
@@ -302,14 +306,14 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                 
                 {/* Visual heartbeat overlay masking password letters with hearts */}
                 <div 
-                  className={`w-full bg-white/70 border-2 rounded-2xl px-4 py-3.5 flex items-center justify-center min-h-[58px] transition-all duration-300 relative ${
+                  className={`w-full bg-slate-950/80 border-2 rounded-2xl px-4 py-3.5 flex items-center justify-center min-h-[58px] transition-all duration-300 relative ${
                     isError 
-                      ? 'border-red-400 bg-red-100/30 shadow-md animate-space' 
+                      ? 'border-red-500/80 bg-red-950/40 shadow-md animate-space' 
                       : isSuccess 
-                        ? 'border-emerald-400 bg-emerald-50/60' 
+                        ? 'border-emerald-500 bg-emerald-950/40' 
                         : isFocused
-                          ? 'border-pink-400 ring-4 ring-pink-100/80 bg-white/90 scale-[1.01]'
-                          : 'border-pink-200 hover:border-pink-300'
+                          ? 'border-pink-500 ring-4 ring-pink-500/20 bg-slate-950 scale-[1.01]'
+                          : 'border-pink-500/30 hover:border-pink-500/50'
                   }`}
                 >
                   {passwordInput.length === 0 ? (
@@ -348,7 +352,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                     setShowHint(!showHint);
                     setFeedbackMsg(null);
                   }}
-                  className="flex items-center justify-center gap-1.5 text-[11px] font-extrabold text-pink-500 hover:text-pink-600 focus:outline-none cursor-pointer mx-auto transition-colors bg-pink-50/40 hover:bg-pink-50/80 px-3.5 py-1.5 rounded-full border border-pink-100/30"
+                  className="flex items-center justify-center gap-1.5 text-[11px] font-extrabold text-pink-300 hover:text-pink-200 focus:outline-none cursor-pointer mx-auto transition-colors bg-pink-950/40 hover:bg-pink-900/60 px-3.5 py-1.5 rounded-full border border-pink-500/20 animate-pulse"
                 >
                   <HelpCircle size={13} className="text-pink-400" />
                   <span>Need a hint, my favorite person?</span>
@@ -357,7 +361,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                 {showHint && (
                   <div 
                     id="hint-expanded"
-                    className="text-[11px] bg-white/95 text-pink-600 px-3 py-2 rounded-xl border border-pink-200/40 text-center font-semibold animate-fade-in shadow-sm leading-normal flex items-center justify-center gap-1.5 w-full"
+                    className="text-[11px] bg-slate-950/95 text-pink-300 px-3 py-2 rounded-xl border border-pink-500/30 text-center font-semibold animate-fade-in shadow-sm leading-normal flex items-center justify-center gap-1.5 w-full"
                   >
                     <span className="text-pink-400 text-xs animate-bounce">💡</span>
                     <span>{config.specialDateHint || "WHENEVER YOU FEEL LOW MY GIRL YOU WENT TO PAPA AND MUMMA AND FRIENDS AND MAYBE RUU.... COMBINATION OF DATES."}</span>
@@ -395,7 +399,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
         </div>
 
         {/* Right: Preview Gallery (Scrapbook Style Collage) */}
-        <div className="w-full lg:w-7/12 grid grid-cols-2 sm:grid-cols-3 gap-4 content-center bg-white/20 backdrop-blur-md p-6 rounded-[32px] border border-white/40 shadow-xl">
+        <div className="w-full lg:w-7/12 grid grid-cols-2 sm:grid-cols-3 gap-4 content-center bg-slate-950/40 backdrop-blur-md p-6 rounded-[32px] border border-pink-500/10 shadow-xl">
           
           {/* Polaroid 2 */}
           <div 
@@ -403,20 +407,20 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
             className="bg-white p-2 pb-6 shadow-md rounded-xs transform rotate-3 hover:rotate-0 hover:scale-103 transition-all duration-300 cursor-pointer border border-pink-100/20"
           >
             <div className="w-full h-24 bg-purple-50 flex items-center justify-center overflow-hidden grayscale contrast-125 hover:grayscale-0 transition-all">
-              <div className="text-purple-300 text-[10px] text-center font-semibold px-1">
+              <div className="text-purple-400 text-[10px] text-center font-semibold px-1">
                 🔒 Our memories
               </div>
             </div>
-            <p className="mt-2 font-serif text-[10px] text-gray-400 text-center">School 2023</p>
+            <p className="mt-2 font-serif text-[10px] text-gray-500 text-center">School 2023</p>
           </div>
 
           {/* Envelope 1 (Open When) */}
           <div 
             onClick={() => handleScrapbookItemClick("Open When Sad Envelope")}
-            className="bg-pink-50/70 hover:bg-pink-100/60 rounded-xl border-2 border-dashed border-pink-300/80 p-3 flex flex-col items-center justify-center text-center shadow-inner cursor-pointer transition-all hover:scale-103"
+            className="bg-pink-950/20 hover:bg-pink-950/40 rounded-xl border-2 border-dashed border-pink-500/30 p-3 flex flex-col items-center justify-center text-center shadow-inner cursor-pointer transition-all hover:scale-103"
           >
             <div className="text-2xl mb-1 select-none animate-bounce delay-1000">💌</div>
-            <p className="text-[10px] font-extrabold text-pink-500 uppercase leading-none tracking-tight font-sans">
+            <p className="text-[10px] font-extrabold text-pink-300 uppercase leading-none tracking-tight font-sans">
               Open When<br/><span className="text-[9px] text-pink-400 font-bold block pt-0.5">Sad</span>
             </p>
           </div>
@@ -424,30 +428,19 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
           {/* STORY DIARY CARD */}
           <div 
             onClick={() => handleScrapbookItemClick("Our Love Story Diary")}
-            className="col-span-2 bg-white/60 hover:bg-white/90 backdrop-blur-xs rounded-2xl p-3.5 border border-white/80 cursor-pointer transition-all hover:scale-[1.01] flex items-center gap-3 shadow-xs"
+            className="col-span-2 bg-slate-900/40 hover:bg-slate-900/75 backdrop-blur-xs rounded-2xl p-3.5 border border-pink-500/15 cursor-pointer transition-all hover:scale-[1.01] flex items-center gap-3 shadow-xs"
           >
             <span className="text-xl">📖</span>
             <div className="text-left">
-              <h3 className="text-xs font-bold text-gray-700">Locked Story Diary</h3>
-              <p className="text-[10px] text-gray-400">Chapters tracing back how we met and grew closer...</p>
+              <h3 className="text-xs font-bold text-pink-100">Locked Story Diary</h3>
+              <p className="text-[10px] text-zinc-400">Chapters tracing back how we met and grew closer...</p>
             </div>
-            <div className="ml-auto bg-pink-100 text-pink-500 p-1 rounded-full">
+            <div className="ml-auto bg-pink-950/60 border border-pink-500/35 text-pink-400 p-1 rounded-full">
               <Lock size={12} />
             </div>
           </div>
 
-          {/* Envelope 2 */}
-          <div 
-            onClick={() => handleScrapbookItemClick("Open When Miss Me Envelope")}
-            className="bg-purple-50/70 hover:bg-purple-100/60 rounded-xl border-2 border-dashed border-purple-300/80 p-3 flex flex-col items-center justify-center text-center shadow-inner cursor-pointer transition-all hover:scale-103"
-          >
-            <div className="text-2xl mb-1 select-none animate-pulse">🌷</div>
-            <p className="text-[10px] font-extrabold text-purple-500 uppercase leading-none tracking-tight font-sans">
-              Open When<br/><span className="text-[9px] text-purple-400 font-bold block pt-0.5">Miss Me</span>
-            </p>
-          </div>
-
-          {/* POLAROID 3 - LIVE BIRTHDAY COUNTDOWN CLASSIC TIMER (25 November) */}
+          {/* POLAROID - LIVE BIRTHDAY COUNTDOWN CLASSIC TIMER (25 November) */}
           <div 
             onClick={() => {
               if (timeLeft.isBirthday) {
@@ -458,51 +451,65 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                 setTimeout(() => setIsError(false), 3000);
               }
             }}
-            className={`col-span-1 relative overflow-hidden bg-gradient-to-br from-rose-500 to-pink-500 text-white p-3 rounded-2xl shadow-lg border border-pink-300/30 transform -rotate-2 hover:rotate-0 hover:scale-105 transition-all duration-300 cursor-pointer flex flex-col justify-between`}
+            className={`col-span-1 relative overflow-hidden bg-gradient-to-b from-slate-900/90 to-purple-950/40 text-white p-3.5 rounded-2xl shadow-[0_0_20px_rgba(236,72,153,0.2)] border border-pink-500/30 hover:border-pink-400/50 hover:scale-105 rotate-1 hover:rotate-0 transition-all duration-300 cursor-pointer flex flex-col justify-between`}
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-bold tracking-wider uppercase opacity-90 font-sans flex items-center gap-1">
-                <Crown size={10} className="text-amber-300 fill-amber-300 animate-bounce" />
-                <span>Birthday Timer 🔒</span>
+            {/* Soft decorative background radial glow */}
+            <div className="absolute top-0 right-0 w-20 h-20 bg-pink-500/20 rounded-full blur-xl pointer-events-none" />
+
+            <div className="flex items-center justify-between mb-2 z-10 relative">
+              <span className="text-[9.5px] font-black tracking-wider uppercase opacity-90 font-sans flex items-center gap-1 text-pink-300 drop-shadow-[0_0_8px_rgba(236,72,153,0.4)]">
+                <Crown size={11} className="text-amber-300 fill-amber-300 animate-pulse" />
+                <span>Birthday 🔒</span>
               </span>
-              <span className="text-[10px] bg-red-600 px-1.5 py-0.5 rounded-full font-bold">LOCKED</span>
+              <span className="text-[7px] bg-pink-950/60 border border-pink-500/40 text-pink-300 px-2 py-0.5 rounded-full font-extrabold shadow-[0_0_10px_rgba(236,72,153,0.2)]">LOCKED</span>
             </div>
 
             {timeLeft.isBirthday ? (
-              <div className="py-2 text-center animate-pulse">
+              <div className="py-2 text-center animate-pulse z-10 relative">
                 <div className="text-2xl">🎁🎂🎈</div>
-                <p className="text-xs font-black uppercase text-amber-200 mt-1 leading-tight">🎂 HAPPY BIRTHDAY!</p>
-                <span className="text-[8px] bg-white text-pink-600 px-1 py-0.5 rounded font-bold mt-1 block">
+                <p className="text-xs font-black uppercase text-amber-200 mt-1 leading-tight">HAPPY BIRTHDAY!</p>
+                <span className="text-[8px] bg-white text-pink-600 px-1.5 py-0.5 rounded font-extrabold mt-1 block shadow-[0_0_12px_rgba(236,72,153,0.4)]">
                   Click to Open Custom Gift 🎁
                 </span>
               </div>
             ) : (
-              <div className="py-1">
+              <div className="py-1 z-10 relative">
                 {/* Visual ticking layout with digital numbers - fully visible! */}
-                <div className="grid grid-cols-4 gap-1 text-center bg-black/40 rounded-lg p-1.5 font-mono text-[10px] font-bold shadow-inner">
-                  <div>
-                    <div className="text-xs text-rose-100">{timeLeft.days}</div>
-                    <div className="text-[6px] uppercase opacity-75">Days</div>
+                <div className="grid grid-cols-4 gap-1 text-center bg-slate-950/90 border border-pink-500/20 rounded-xl p-1.5 font-mono text-[9px] font-bold shadow-inner">
+                  <div className="bg-slate-900/60 p-1 rounded-md border border-pink-500/10">
+                    <div className="text-xs text-pink-300 font-extrabold">{timeLeft.days}</div>
+                    <div className="text-[5px] uppercase opacity-70 tracking-widest">Days</div>
                   </div>
-                  <div>
-                    <div className="text-xs text-rose-100">{timeLeft.hours}</div>
-                    <div className="text-[6px] uppercase opacity-75">Hrs</div>
+                  <div className="bg-slate-900/60 p-1 rounded-md border border-pink-500/10">
+                    <div className="text-xs text-pink-300 font-extrabold">{timeLeft.hours}</div>
+                    <div className="text-[5px] uppercase opacity-70 tracking-widest">Hrs</div>
                   </div>
-                  <div>
-                    <div className="text-xs text-rose-100">{timeLeft.minutes}</div>
-                    <div className="text-[6px] uppercase opacity-75">Min</div>
+                  <div className="bg-slate-900/60 p-1 rounded-md border border-pink-500/10">
+                    <div className="text-xs text-pink-300 font-extrabold">{timeLeft.minutes}</div>
+                    <div className="text-[5px] uppercase opacity-70 tracking-widest">Min</div>
                   </div>
-                  <div>
-                    <div className="text-xs text-amber-300 animate-pulse">{timeLeft.seconds}</div>
-                    <div className="text-[6px] uppercase opacity-75">Sec</div>
+                  <div className="bg-slate-900/60 p-1 rounded-md border border-pink-500/10">
+                    <div className="text-xs text-amber-300 font-extrabold animate-pulse">{timeLeft.seconds}</div>
+                    <div className="text-[5px] uppercase opacity-70 tracking-widest">Sec</div>
                   </div>
                 </div>
                 
-                <p className="text-[8.5px] text-pink-100 mt-2 text-center font-semibold italic leading-tight">
-                  Locked until November 25 🎂
+                <p className="text-[8.5px] text-pink-300/90 mt-2 text-center font-bold italic leading-tight drop-shadow-[0_0_6px_rgba(236,72,153,0.2)]">
+                  Unlocking Nov 25 🎂
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Envelope 2 */}
+          <div 
+            onClick={() => handleScrapbookItemClick("Open When Miss Me Envelope")}
+            className="bg-purple-950/20 hover:bg-purple-950/40 rounded-xl border-2 border-dashed border-purple-500/30 p-3 flex flex-col items-center justify-center text-center shadow-inner cursor-pointer transition-all hover:scale-103"
+          >
+            <div className="text-2xl mb-1 select-none animate-pulse">🌷</div>
+            <p className="text-[10px] font-extrabold text-purple-300 uppercase leading-none tracking-tight font-sans">
+              Open When<br/><span className="text-[9px] text-purple-400 font-bold block pt-0.5">Miss Me</span>
+            </p>
           </div>
 
           {/* Final Secret Room Trigger */}

@@ -1,10 +1,10 @@
 import { MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter, LoveConfig } from './types';
-import profileLogo from './assets/images/regenerated_image_1780655372225.jpg';
+import profileLogo from './assets/images/regenerated_image_1780664961225.png';
 
 export const DEFAULT_CONFIG: LoveConfig = {
   coupleNameOne: "Rupesh",
   coupleNameTwo: "Mystic Signal",
-  specialDate: "1122", // Default simple passcode
+  specialDate: "1125", // Default simple passcode
   specialDateHint: "WHENEVER YOU FEEL LOW MY GIRL YOU WENT TO PAPA AND MUMMA AND FRIENDS AND MAYBE RUU.... COMBINATION OF DATES.",
   bgMusicUrl: "https://youtu.be/2_i3Iw0rZPo?si=za6peqgbPUgB7mj4", // Fail-safe sweet romantic instrumental loop
   promises: [
