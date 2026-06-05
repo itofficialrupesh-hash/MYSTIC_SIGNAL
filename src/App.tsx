@@ -414,6 +414,9 @@ export default function App() {
         <p className="text-[10px] text-pink-300/80 mt-1.5 italic font-serif">
           sorry 🥺❤️
         </p>
+        <p className="text-[11px] text-pink-400 font-serif font-bold mt-2 tracking-wide uppercase animate-pulse">
+          BACHAA MAAF KARDOO OOS DIN KE LIYE JI 🙏🥺❤️
+        </p>
         <p className="text-[9px] text-pink-400/60 mt-1 uppercase tracking-widest font-mono">
           by your Ruu ✨
         </p>

@@ -404,14 +404,15 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
           {/* Polaroid 2 */}
           <div 
             onClick={() => handleScrapbookItemClick("Our Memories")}
-            className="bg-white p-2 pb-6 shadow-md rounded-xs transform rotate-3 hover:rotate-0 hover:scale-103 transition-all duration-300 cursor-pointer border border-pink-100/20"
+            className="bg-slate-900/90 p-2 pb-5 shadow-[0_0_15px_rgba(236,72,153,0.15)] rounded-2xl transform rotate-3 hover:rotate-0 hover:scale-105 transition-all duration-300 cursor-pointer border border-pink-500/30 hover:border-pink-400/50"
           >
-            <div className="w-full h-24 bg-purple-50 flex items-center justify-center overflow-hidden grayscale contrast-125 hover:grayscale-0 transition-all">
-              <div className="text-purple-400 text-[10px] text-center font-semibold px-1">
-                🔒 Our memories
+            <div className="w-full h-24 bg-purple-950/40 rounded-lg border border-purple-500/20 flex items-center justify-center overflow-hidden grayscale contrast-125 hover:grayscale-0 transition-all">
+              <div className="text-purple-300 text-[10px] text-center font-bold tracking-wider px-1 uppercase flex flex-col items-center gap-1">
+                <span className="text-lg">🔒</span>
+                <span>Our memories</span>
               </div>
             </div>
-            <p className="mt-2 font-serif text-[10px] text-gray-500 text-center">School 2023</p>
+            <p className="mt-2.5 font-serif text-[10px] text-pink-300/90 font-bold text-center">School 2023 💖</p>
           </div>
 
           {/* Envelope 1 (Open When) */}
