@@ -13,6 +13,7 @@ import SecretAdmin from './components/SecretAdmin';
 import PolaroidGallery from './components/PolaroidGallery';
 import OpenWhenLetters from './components/OpenWhenLetters';
 import SecretRoom from './components/SecretRoom';
+import LovelyLogo from './components/LovelyLogo';
 
 // Types and Defaults
 import { LoveConfig, MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter } from './types';
@@ -63,6 +64,7 @@ export default function App() {
         passcode: DEFAULT_CONFIG.specialDate,
         hint: DEFAULT_CONFIG.specialDateHint,
         music: DEFAULT_CONFIG.bgMusicUrl,
+        logoUrl: DEFAULT_CONFIG.profileLogoUrl,
         promisesLength: DEFAULT_CONFIG.promises.length,
         reasonsLength: DEFAULT_CONFIG.reasonsWhySpecial.length,
         photosLength: DEFAULT_PHOTOS.length,
@@ -236,25 +238,17 @@ export default function App() {
             
             <div className="space-y-1.5 text-center md:text-left select-none">
               <div className="flex flex-col md:flex-row items-center gap-3">
-                <div className="relative shrink-0">
-                  <svg className="w-8 h-8 rounded-full filter drop-shadow-xs select-none" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="50" cy="50" r="50" fill="url(#dashBrandGrad)" />
-                    <path d="M30 50 C30 35 45 30 50 42 C55 54 70 48 70 65 C70 78 52 75 48 65 C44 55 54 48 50 42 C46 36 38 38 38 50 Z" fill="url(#dashBrandWave)" />
-                    <circle cx="50" cy="50" r="4" fill="#ffffff" />
-                    <defs>
-                      <linearGradient id="dashBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#1e293b" />
-                        <stop offset="100%" stopColor="#0f172a" />
-                      </linearGradient>
-                      <linearGradient id="dashBrandWave" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#ec4899" />
-                        <stop offset="100%" stopColor="#8b5cf6" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <span className="absolute -bottom-0.5 -right-0.5 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500"></span>
+                <div className="relative shrink-0 select-none group">
+                  <div className="absolute inset-0 bg-pink-400/20 rounded-full blur-sm group-hover:bg-pink-400/40 transition-all duration-300" />
+                  <img 
+                    src={config.profileLogoUrl || "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop"} 
+                    alt="Sanctuary Logo" 
+                    referrerPolicy="no-referrer"
+                    className="w-12 h-12 relative z-10 rounded-full border-2 border-[#d4af37]/80 object-cover shadow-md group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <span className="absolute bottom-0 right-0 z-20 flex h-3.5 w-3.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-80"></span>
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-pink-500 border-2 border-white flex items-center justify-center text-[7px] text-white font-bold select-none">💖</span>
                   </span>
                 </div>
                 <h1 className="font-serif text-2xl md:text-3xl font-black text-gray-800 tracking-tight">Our Secret Sanctuary</h1>

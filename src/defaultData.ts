@@ -1,10 +1,11 @@
 import { MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter, LoveConfig } from './types';
+import profileLogo from './assets/images/regenerated_image_1780655372225.jpg';
 
 export const DEFAULT_CONFIG: LoveConfig = {
   coupleNameOne: "Rupesh",
   coupleNameTwo: "Mystic Signal",
   specialDate: "1122", // Default simple passcode
-  specialDateHint: "Enter our special date (e.g. 1122 or the date that started it all) ✨",
+  specialDateHint: "WHENEVER YOU FEEL LOW MY GIRL YOU WENT TO PAPA AND MUMMA AND FRIENDS AND MAYBE RUU.... COMBINATION OF DATES.",
   bgMusicUrl: "https://youtu.be/2_i3Iw0rZPo?si=za6peqgbPUgB7mj4", // Fail-safe sweet romantic instrumental loop
   promises: [
     "I promise to always listen to you, even when we don't agree, and to build a space where you feel safe and loved.",
@@ -17,10 +18,11 @@ export const DEFAULT_CONFIG: LoveConfig = {
     "Your beautiful smile that instantly brightens up even my darkest days. ☀️",
     "The way your eyes wrinkle up in pure joy when you find something genuinely funny. ✨",
     "Your endless kindness and the warm, golden heart you show to everyone around you. 💛",
-    "The comforting warmth of your presence—how you make me feel completely safe and at home. 🏡",
+    "The comforting warmth of your presence—how you make feel completely safe and at home. 🏡",
     "Your brilliant mind, your passionate spirit, and the sweet way you care for the tinies details. 🌸",
     "How you make me want to be the absolute best version of myself just to make you proud. 💕"
-  ]
+  ],
+  profileLogoUrl: profileLogo
 };
 
 export const DEFAULT_PHOTOS: MemoryPhoto[] = [

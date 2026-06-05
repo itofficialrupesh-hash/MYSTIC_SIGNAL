@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Lock, Unlock, HelpCircle, Heart, Star, Compass, Gift, Calendar, Clock, Crown } from 'lucide-react';
 import { LoveConfig } from '../types';
+import LovelyLogo from './LovelyLogo';
 
 interface LandingPageProps {
   config: LoveConfig;
@@ -219,28 +220,9 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
 
       {/* Header Section */}
       <header className="text-center mb-6 w-full max-w-4xl relative z-10 select-none">
-        {/* Mystic Signal Brand Logo */}
-        <div className="flex justify-center mb-4">
-          <div className="relative group">
-            <div className="absolute inset-0 bg-pink-400/20 rounded-full blur-md group-hover:bg-pink-400/40 transition-all duration-500 animate-pulse" />
-            <svg className="w-14 h-14 relative z-10 filter drop-shadow-md select-none hover:scale-105 transition-transform duration-300" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="50" cy="50" r="50" fill="url(#brandGrad)" />
-              <path d="M30 50 C30 35 45 30 50 42 C55 54 70 48 70 65 C70 78 52 75 48 65 C44 55 54 48 50 42 C46 36 38 38 38 50 Z" fill="url(#brandWave)" />
-              <circle cx="50" cy="50" r="4" fill="#ffffff" />
-              <circle cx="28" cy="28" r="2" fill="#ffffff" className="animate-pulse" />
-              <circle cx="72" cy="72" r="2" fill="#ffffff" className="animate-pulse" />
-              <defs>
-                <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#1e293b" />
-                  <stop offset="100%" stopColor="#0f172a" />
-                </linearGradient>
-                <linearGradient id="brandWave" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#ec4899" />
-                  <stop offset="100%" stopColor="#8b5cf6" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
+        {/* Lovely Logo Brand Component */}
+        <div className="flex justify-center mb-6">
+          <LovelyLogo size="lg" imageUrl={config.profileLogoUrl} />
         </div>
 
         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-100/60 border border-pink-200 rounded-full text-pink-600 font-bold text-[10px] uppercase tracking-widest mb-3 animate-bounce">
@@ -378,7 +360,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                     className="text-[11px] bg-white/95 text-pink-600 px-3 py-2 rounded-xl border border-pink-200/40 text-center font-semibold animate-fade-in shadow-sm leading-normal flex items-center justify-center gap-1.5 w-full"
                   >
                     <span className="text-pink-400 text-xs animate-bounce">💡</span>
-                    <span>{config.specialDateHint || "Enter our special date (e.g. 1122 or the date that started it all) ✨"}</span>
+                    <span>{config.specialDateHint || "WHENEVER YOU FEEL LOW MY GIRL YOU WENT TO PAPA AND MUMMA AND FRIENDS AND MAYBE RUU.... COMBINATION OF DATES."}</span>
                   </div>
                 )}
               </div>

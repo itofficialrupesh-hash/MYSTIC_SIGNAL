@@ -399,6 +399,23 @@ export default function SecretAdmin({
                     Provide any direct MP3 audio stream. Try standard audio streams or leave current default romantic instrumental playing.
                   </p>
                 </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5 flex items-center gap-1.5">
+                    <Image size={14} className="text-pink-500" />
+                    <span>Lover Logo / Profile Portrait Picture URL</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={localConfig.profileLogoUrl || ''}
+                    onChange={(e) => setLocalConfig({ ...localConfig, profileLogoUrl: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-100/80 focus:border-pink-300 text-xs font-mono"
+                    placeholder="E.g. paste your direct image link or base64 data URL"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Paste any direct romantic picture link (from Imgur, Postimg, Unsplash, or Discord) to display it in the gorgeous gold-bordered circular brand logo!
+                  </p>
+                </div>
               </div>
             )}
 

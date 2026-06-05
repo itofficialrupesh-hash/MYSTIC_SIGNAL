@@ -39,4 +39,5 @@ export interface LoveConfig {
   bgMusicUrl: string; // Default audio stream
   promises: string[];
   reasonsWhySpecial: string[];
+  profileLogoUrl?: string; // Optional custom brand logo photo URL
 }
