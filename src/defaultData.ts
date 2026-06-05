@@ -5,7 +5,7 @@ export const DEFAULT_CONFIG: LoveConfig = {
   coupleNameTwo: "Mystic Signal",
   specialDate: "1122", // Default simple passcode
   specialDateHint: "Enter our special date (e.g. 1122 or the date that started it all) ✨",
-  bgMusicUrl: "https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Seasides_Soundtrack.mp3", // Fail-safe sweet romantic instrumental loop
+  bgMusicUrl: "https://youtu.be/2_i3Iw0rZPo?si=za6peqgbPUgB7mj4", // Fail-safe sweet romantic instrumental loop
   promises: [
     "I promise to always listen to you, even when we don't agree, and to build a space where you feel safe and loved.",
     "I promise to hold your hand through every high and low of life, being your biggest cheerleader and strongest supporter.",

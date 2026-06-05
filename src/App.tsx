@@ -58,9 +58,9 @@ export default function App() {
 
       if (savedConfig) {
         const parsed = JSON.parse(savedConfig);
-        // Automatic sweet music track migration to stable fail-safe GCS soundtrack
-        if (!parsed.bgMusicUrl || parsed.bgMusicUrl.includes("mixkit") || parsed.bgMusicUrl.includes("SoundHelix")) {
-          parsed.bgMusicUrl = DEFAULT_CONFIG.bgMusicUrl;
+        // Automatic sweet music track migration to stable fail-safe SoundHelix/YouTube soundtrack
+        if (!parsed.bgMusicUrl || parsed.bgMusicUrl.includes("mixkit") || parsed.bgMusicUrl.includes("codeskulptor") || parsed.bgMusicUrl.includes("google") || parsed.bgMusicUrl.includes("SoundHelix") || !parsed.bgMusicUrl.includes("za6peqgbPUgB7mj4")) {
+          parsed.bgMusicUrl = "https://youtu.be/2_i3Iw0rZPo?si=za6peqgbPUgB7mj4";
           try {
             localStorage.setItem('love_config', JSON.stringify(parsed));
           } catch (storageErr) {
@@ -188,7 +188,6 @@ export default function App() {
         <LandingPage 
           config={config} 
           onUnlocked={handleMasterUnlocked}
-          onOpenCreatorDemo={() => setShowAdmin(true)}
         />
       ) : (
         // AUTHENTICATED SECRET LAND
@@ -322,7 +321,7 @@ export default function App() {
       )}
 
       {/* CUSTOMIZABILITY ADMIN / CREATOR PANEL MODAL OVERLAY */}
-      {showAdmin && (
+      {showAdmin && isUnlocked && (
         <SecretAdmin 
           config={config}
           photos={photos}

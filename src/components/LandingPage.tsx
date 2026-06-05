@@ -1,22 +1,108 @@
-import React, { useState } from 'react';
-import { Lock, Unlock, HelpCircle, Heart, Star, Compass } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Lock, Unlock, HelpCircle, Heart, Star, Compass, Gift, Calendar, Clock, Crown } from 'lucide-react';
 import { LoveConfig } from '../types';
 
 interface LandingPageProps {
   config: LoveConfig;
   onUnlocked: () => void;
-  onOpenCreatorDemo?: () => void;
 }
 
-export default function LandingPage({ config, onUnlocked, onOpenCreatorDemo }: LandingPageProps) {
+interface ClickEmoji {
+  id: number;
+  x: number;
+  y: number;
+  scale: number;
+  emoji: string;
+  rotation: number;
+}
+
+export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
   const [passwordInput, setPasswordInput] = useState('');
   const [isError, setIsError] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [showHelpBadge, setShowHelpBadge] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+  const [clickingHearts, setClickingHearts] = useState<ClickEmoji[]>([]);
+  
+  // Birthday countdown state (Target: 25 November)
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    isBirthday: false
+  });
 
-  // Auto clean password input structure for resilient matching
+  // Calculate the live countdown to 25 November
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      
+      // November is month index 10 (0-indexed)
+      let birthdayTarget = new Date(currentYear, 10, 25, 0, 0, 0);
+      
+      // If November 25th has already passed this year, count down to next year's
+      if (now.getTime() > birthdayTarget.getTime()) {
+        birthdayTarget = new Date(currentYear + 1, 10, 25, 0, 0, 0);
+      }
+      
+      // Check if TODAY is November 25th
+      const isTodayNov25 = now.getDate() === 25 && now.getMonth() === 10;
+      
+      const difference = birthdayTarget.getTime() - now.getTime();
+      
+      if (isTodayNov25 || difference <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isBirthday: true });
+        return;
+      }
+      
+      const d = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const h = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((difference / 1000 / 60) % 60);
+      const s = Math.floor((difference / 1000) % 60);
+      
+      setTimeLeft({ days: d, hours: h, minutes: m, seconds: s, isBirthday: isTodayNov25 });
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Soft click burst handler for girl-friendly sweet experience
+  const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only trigger if clicking directly on background, wrappers or empty space
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'BUTTON' || target.closest('a') || target.closest('form')) {
+      return;
+    }
+
+    const cuteEmojis = ['💋', '😘', '👩‍❤️‍💋‍👨', '💖', '✨', '🌸', '🦋', '🎈', '💖', '🧁', '💝', '😘', '💋', '💞', '💘', '🧸', '💝', '👩‍❤️‍💋‍👨', '💋', '❤️‍🔥'];
+    const randomEmoji = cuteEmojis[Math.floor(Math.random() * cuteEmojis.length)];
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const newEmoji: ClickEmoji = {
+      id: Date.now() + Math.random(),
+      x,
+      y,
+      scale: Math.random() * 0.5 + 0.8,
+      emoji: randomEmoji,
+      rotation: (Math.random() - 0.5) * 30
+    };
+    
+    setClickingHearts(prev => [...prev, newEmoji]);
+    
+    // Cleanup particle after animation finishes
+    setTimeout(() => {
+      setClickingHearts(prev => prev.filter(item => item.id !== newEmoji.id));
+    }, 1600);
+  };
+
+  // Convert input string for clean and foolproof validation matching
   const cleanString = (str: string) => {
     return str.toLowerCase().replace(/[^a-z0-9]/g, '');
   };
@@ -27,19 +113,16 @@ export default function LandingPage({ config, onUnlocked, onOpenCreatorDemo }: L
     const targetClean = cleanString(config.specialDate);
     const inputClean = cleanString(passwordInput);
 
-    // Support both exact clean-match, or a fallback to '1122' if empty/wrongly saved
     if (inputClean === targetClean || inputClean === '1122' || passwordInput.trim() === config.specialDate) {
       setIsSuccess(true);
       setIsError(false);
       setFeedbackMsg("✨ Correct! Opening our digital love sanctuary...");
-      // Play brief unlock delay for transition animation
       setTimeout(() => {
         onUnlocked();
       }, 1200);
     } else {
       setIsError(true);
       setFeedbackMsg(`❌ Hmm, that magic date doesn't match. Try "${config.specialDate || '1122'}" or look inside!`);
-      // Reset error state
       setTimeout(() => {
         setIsError(false);
       }, 800);
@@ -60,17 +143,85 @@ export default function LandingPage({ config, onUnlocked, onOpenCreatorDemo }: L
 
   return (
     <div 
-      className="relative min-h-[92vh] w-full flex flex-col items-center justify-center p-4 lg:p-8 overflow-hidden bg-gradient-to-br from-[#FFF5F7] via-[#FDF2F8] to-[#F3E8FF]"
+      className="relative min-h-[92vh] w-full flex flex-col items-center justify-center p-4 lg:p-8 overflow-hidden bg-gradient-to-br from-[#FFF5F7] via-[#FDF2F8] to-[#F3E8FF] select-none cursor-heart"
       id="landing-container"
+      onClick={handleBackgroundClick}
     >
-      {/* Graphic floating elements from pure theme specification */}
-      <div className="absolute top-10 left-10 text-pink-300 opacity-60 animate-pulse text-4xl select-none pointer-events-none">❤️</div>
-      <div className="absolute bottom-20 right-10 text-purple-300 opacity-60 text-4xl select-none pointer-events-none animate-bounce delay-150">✨</div>
-      <div className="absolute top-40 right-20 text-yellow-300 opacity-60 text-3xl select-none pointer-events-none animate-pulse">⭐</div>
-      <div className="absolute bottom-10 left-20 text-blue-300 opacity-40 text-5xl select-none pointer-events-none">🦋</div>
+      {/* Interactive styles wrapper */}
+      <style>{`
+        @keyframes popUpDrift {
+          0% {
+            transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+            opacity: 0;
+          }
+          15% {
+            transform: translate(-50%, -50%) scale(1.3) rotate(var(--pop-rot)) translateY(-15px);
+            opacity: 1;
+          }
+          100% {
+            transform: translate(-50%, -50%) scale(0.8) rotate(calc(var(--pop-rot) * 1.8)) translateY(-120px);
+            opacity: 0;
+          }
+        }
+        .animate-pop-drift {
+          animation: popUpDrift 1.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+        }
+        .cursor-heart {
+          cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%23ec4899' stroke='%23f43f5e' stroke-width='1.5'><path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/></svg>"), auto;
+        }
+        .animate-sway {
+          animation: sway 4s ease-in-out infinite alternate;
+        }
+        @keyframes sway {
+          0% { transform: translateY(0) rotate(-3deg); }
+          100% { transform: translateY(-10px) rotate(3deg); }
+        }
+        @keyframes customGlow {
+          0%, 100% { filter: drop-shadow(0 0 5px rgba(244, 63, 94, 0.7)) drop-shadow(0 0 12px rgba(244, 63, 94, 0.4)); transform: scale(1); }
+          50% { filter: drop-shadow(0 0 15px rgba(244, 63, 94, 1)) drop-shadow(0 0 25px rgba(236, 72, 153, 0.9)); transform: scale(1.1); }
+        }
+        .animate-glow-heart {
+          animation: customGlow 2.5s ease-in-out infinite;
+          display: inline-block;
+        }
+      `}</style>
+
+      {/* Floating Click Burst Layer */}
+      {clickingHearts.map((item) => (
+        <span
+          key={item.id}
+          className="absolute pointer-events-none text-3xl z-50 select-none animate-pop-drift filter drop-shadow-[0_0_12px_rgba(236,72,153,1)]"
+          style={{
+            left: `${item.x}px`,
+            top: `${item.y}px`,
+            '--pop-rot': `${item.rotation}deg`,
+          } as React.CSSProperties}
+        >
+          {item.emoji}
+        </span>
+      ))}
+
+      {/* Graphic floating sweet background particles */}
+      <div className="absolute top-10 left-10 text-pink-400 animate-glow-heart text-4xl select-none pointer-events-none">💖</div>
+      <div className="absolute bottom-20 right-10 text-purple-400 opacity-80 text-4xl select-none pointer-events-none animate-bounce delay-150 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]">😘</div>
+      <div className="absolute top-40 right-20 text-yellow-400 animate-pulse text-3xl select-none pointer-events-none">⭐</div>
+      <div className="absolute bottom-10 left-20 text-pink-300 animate-glow-heart text-5xl select-none pointer-events-none">💋</div>
+      <div className="absolute top-[28%] right-[3%] text-3xl animate-glow-heart select-none pointer-events-none">💝</div>
+
+      {/* More girl-friendly items scattered beautifully in the background for cozy mood */}
+      <div className="absolute top-[20%] left-[8%] text-3xl animate-sway select-none pointer-events-none opacity-50">🎈</div>
+      <div className="absolute top-[12%] right-[15%] text-3xl animate-spin-slow select-none pointer-events-none opacity-50">🌸</div>
+      <div className="absolute bottom-[35%] left-[12%] text-3xl animate-bounce select-none pointer-events-none opacity-60">🧸</div>
+      <div className="absolute bottom-[28%] right-[18%] text-3xl animate-glow-heart select-none pointer-events-none">💋</div>
+      <div className="absolute top-[75%] left-[25%] text-2xl select-none pointer-events-none opacity-40 animate-pulse">🎀</div>
+      <div className="absolute top-[5%] left-[45%] text-2xl select-none pointer-events-none opacity-50">🫧</div>
 
       {/* Header Section */}
-      <header className="text-center mb-10 w-full max-w-4xl relative z-10 select-none">
+      <header className="text-center mb-6 w-full max-w-4xl relative z-10 select-none">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-100/60 border border-pink-200 rounded-full text-pink-600 font-bold text-[10px] uppercase tracking-widest mb-3 animate-bounce">
+          <span>💖</span>
+          <span>Tap anywhere to spawn cute magic sparkles!</span>
+        </div>
         <h1 className="text-4xl md:text-5xl font-serif text-pink-600 mb-2 font-bold tracking-tight italic">
           A Special Surprise For {config.coupleNameTwo || 'Mystic Signal'} ❤️
         </h1>
@@ -93,9 +244,9 @@ export default function LandingPage({ config, onUnlocked, onOpenCreatorDemo }: L
             {/* Cute Teddy Bear Mascot holding a heart / locks */}
             <div className="relative w-full flex flex-col items-center justify-center mb-4 select-none">
               {/* Cute speech bubble from the teddy */}
-              <div className="bg-white/90 border border-pink-200 text-pink-600 font-bold font-serif text-[10px] px-3 py-1 rounded-2xl shadow-xs leading-none transition-transform duration-300 hover:scale-105 flex items-center gap-1.5 mb-2 animate-pulse">
+              <div className="bg-white/90 border border-pink-200 text-pink-600 font-bold font-serif text-[10px] px-3 py-1.5 rounded-2xl shadow-xs leading-tight transition-transform duration-300 hover:scale-105 flex items-center justify-center gap-1.5 mb-2 animate-pulse">
                 <span>🧸</span>
-                <span>Mystic Signal, touch to play music & enter custom key!</span>
+                <span>Enter our special date to open my heart!</span>
                 <span className="text-pink-500">❤️</span>
               </div>
               
@@ -205,15 +356,15 @@ export default function LandingPage({ config, onUnlocked, onOpenCreatorDemo }: L
           
           {/* Polaroid 2 */}
           <div 
-            onClick={() => handleScrapbookItemClick("Summer Adventures")}
+            onClick={() => handleScrapbookItemClick("Our Memories")}
             className="bg-white p-2 pb-6 shadow-md rounded-xs transform rotate-3 hover:rotate-0 hover:scale-103 transition-all duration-300 cursor-pointer border border-pink-100/20"
           >
             <div className="w-full h-24 bg-purple-50 flex items-center justify-center overflow-hidden grayscale contrast-125 hover:grayscale-0 transition-all">
               <div className="text-purple-300 text-[10px] text-center font-semibold px-1">
-                🔒 Summer memories
+                🔒 Our memories
               </div>
             </div>
-            <p className="mt-2 font-serif text-[10px] text-gray-400 text-center">Paris, Aug 2023</p>
+            <p className="mt-2 font-serif text-[10px] text-gray-400 text-center">School 2023</p>
           </div>
 
           {/* Envelope 1 (Open When) */}
@@ -222,10 +373,12 @@ export default function LandingPage({ config, onUnlocked, onOpenCreatorDemo }: L
             className="bg-pink-50/70 hover:bg-pink-100/60 rounded-xl border-2 border-dashed border-pink-300/80 p-3 flex flex-col items-center justify-center text-center shadow-inner cursor-pointer transition-all hover:scale-103"
           >
             <div className="text-2xl mb-1 select-none animate-bounce delay-1000">💌</div>
-            <p className="text-[10px] font-extrabold text-pink-500 uppercase leading-none tracking-tight">Open When<br/><span className="text-[9px] text-pink-400 font-bold block pt-0.5">Sad</span></p>
+            <p className="text-[10px] font-extrabold text-pink-500 uppercase leading-none tracking-tight font-sans">
+              Open When<br/><span className="text-[9px] text-pink-400 font-bold block pt-0.5">Sad</span>
+            </p>
           </div>
 
-          {/* Story Card */}
+          {/* STORY DIARY CARD */}
           <div 
             onClick={() => handleScrapbookItemClick("Our Love Story Diary")}
             className="col-span-2 bg-white/60 hover:bg-white/90 backdrop-blur-xs rounded-2xl p-3.5 border border-white/80 cursor-pointer transition-all hover:scale-[1.01] flex items-center gap-3 shadow-xs"
@@ -246,20 +399,67 @@ export default function LandingPage({ config, onUnlocked, onOpenCreatorDemo }: L
             className="bg-purple-50/70 hover:bg-purple-100/60 rounded-xl border-2 border-dashed border-purple-300/80 p-3 flex flex-col items-center justify-center text-center shadow-inner cursor-pointer transition-all hover:scale-103"
           >
             <div className="text-2xl mb-1 select-none animate-pulse">🌷</div>
-            <p className="text-[10px] font-extrabold text-purple-500 uppercase leading-none tracking-tight">Open When<br/><span className="text-[9px] text-purple-400 font-bold block pt-0.5">Miss Me</span></p>
+            <p className="text-[10px] font-extrabold text-purple-500 uppercase leading-none tracking-tight font-sans">
+              Open When<br/><span className="text-[9px] text-purple-400 font-bold block pt-0.5">Miss Me</span>
+            </p>
           </div>
 
-          {/* Polaroid 3 */}
+          {/* POLAROID 3 - LIVE BIRTHDAY COUNTDOWN CLASSIC TIMER (25 November) */}
           <div 
-            onClick={() => handleScrapbookItemClick("Birthday Celebration")}
-            className="bg-white p-2 pb-6 shadow-md rounded-xs transform -rotate-3 hover:rotate-0 hover:scale-103 transition-all duration-300 cursor-pointer border border-pink-100/20"
+            onClick={() => {
+              if (timeLeft.isBirthday) {
+                onUnlocked();
+              } else {
+                setFeedbackMsg("🎂 This custom Birthday Surprise is lock-secured! It will automatically unlock on November 25! 💝 Keep counting down!");
+                setIsError(true);
+                setTimeout(() => setIsError(false), 3000);
+              }
+            }}
+            className={`col-span-1 relative overflow-hidden bg-gradient-to-br from-rose-500 to-pink-500 text-white p-3 rounded-2xl shadow-lg border border-pink-300/30 transform -rotate-2 hover:rotate-0 hover:scale-105 transition-all duration-300 cursor-pointer flex flex-col justify-between`}
           >
-            <div className="w-full h-24 bg-yellow-50 flex items-center justify-center overflow-hidden grayscale contrast-125 hover:grayscale-0 transition-all">
-              <div className="text-yellow-300 text-[10px] text-center font-semibold px-1">
-                🔒 Birthday morning
-              </div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-bold tracking-wider uppercase opacity-90 font-sans flex items-center gap-1">
+                <Crown size={10} className="text-amber-300 fill-amber-300 animate-bounce" />
+                <span>Birthday Timer 🔒</span>
+              </span>
+              <span className="text-[10px] bg-red-600 px-1.5 py-0.5 rounded-full font-bold">LOCKED</span>
             </div>
-            <p className="mt-2 font-serif text-[10px] text-gray-400 text-center">Waking up with you</p>
+
+            {timeLeft.isBirthday ? (
+              <div className="py-2 text-center animate-pulse">
+                <div className="text-2xl">🎁🎂🎈</div>
+                <p className="text-xs font-black uppercase text-amber-200 mt-1 leading-tight">🎂 HAPPY BIRTHDAY!</p>
+                <span className="text-[8px] bg-white text-pink-600 px-1 py-0.5 rounded font-bold mt-1 block">
+                  Click to Open Custom Gift 🎁
+                </span>
+              </div>
+            ) : (
+              <div className="py-1">
+                {/* Visual ticking layout with digital numbers - fully visible! */}
+                <div className="grid grid-cols-4 gap-1 text-center bg-black/40 rounded-lg p-1.5 font-mono text-[10px] font-bold shadow-inner">
+                  <div>
+                    <div className="text-xs text-rose-100">{timeLeft.days}</div>
+                    <div className="text-[6px] uppercase opacity-75">Days</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-rose-100">{timeLeft.hours}</div>
+                    <div className="text-[6px] uppercase opacity-75">Hrs</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-rose-100">{timeLeft.minutes}</div>
+                    <div className="text-[6px] uppercase opacity-75">Min</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-amber-300 animate-pulse">{timeLeft.seconds}</div>
+                    <div className="text-[6px] uppercase opacity-75">Sec</div>
+                  </div>
+                </div>
+                
+                <p className="text-[8.5px] text-pink-100 mt-2 text-center font-semibold italic leading-tight">
+                  Locked until November 25 🎂
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Final Secret Room Trigger */}
@@ -270,12 +470,12 @@ export default function LandingPage({ config, onUnlocked, onOpenCreatorDemo }: L
             <div className="bg-white/20 p-2 rounded-full leading-none shrink-0">
               <span className="text-xl">🔮</span>
             </div>
-            <div className="text-left">
+            <div className="text-left animate-pulse">
               <h3 className="text-xs font-bold leading-tight">Mystic Signal & Secret Room</h3>
               <p className="text-[9px] text-white/80 leading-normal">Connect telepathically with custom heart-vibe pulses, coupons, and more!</p>
             </div>
             <div className="ml-auto shrink-0">
-              <Heart size={14} fill="white" className="heart-pulsing animate-pulse" />
+              <Heart size={14} fill="white" className="heart-pulsing" />
             </div>
           </div>
 
@@ -311,11 +511,10 @@ export default function LandingPage({ config, onUnlocked, onOpenCreatorDemo }: L
 
       {/* Footer Controls matching theme style exactly */}
       <footer className="mt-auto w-full max-w-5xl flex flex-col sm:flex-row justify-between items-center gap-4 relative z-10 p-2 sm:p-0">
-        {/* Hidden on Landing page - configuration can only be done from Personalization drawer inside Sanctuary when correct password is entered */}
         <div className="hidden" />
         
         <div className="text-center sm:text-right select-none">
-          <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black">Crafted with infinite affection</p>
+          <p className="text-[9px] text-gray-400 uppercase tracking-widest font-black font-mono">Crafted with infinite affection</p>
           <p className="text-xs font-serif text-pink-600 font-semibold italic">Our Eternal Love Box ❤️</p>
         </div>
       </footer>

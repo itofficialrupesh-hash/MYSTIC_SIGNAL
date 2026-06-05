@@ -1,259 +1,295 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Volume2, VolumeX, Music, RefreshCw, AlertCircle } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, AlertCircle, HardDrive, Tv } from 'lucide-react';
 
 interface MusicPlayerProps {
   musicUrl: string;
 }
 
-// Fail-safe high-availability sweet melody collection
-const FALLBACK_MELODIES = [
-  { name: "Romantic Sweet Seaside", url: "https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Seasides_Soundtrack.mp3" },
-  { name: "Cozy Cozy Instrumental", url: "https://commondatastorage.googleapis.com/codeskulptor-demos/charlie_assets/char_sounds/soundtrack.mp3" },
-  { name: "Sweet Spring Acoustic", url: "https://commondatastorage.googleapis.com/codeskulptor-demos/pyspath3/soundtrack.mp3" },
-  { name: "Whimsical Lofi Dreams", url: "https://commondatastorage.googleapis.com/codeskulptor-assets/gamedev/assets_gamedev_funny_background.mp3" }
-];
+// Extract standard YouTube 11-character video ID
+function getYouTubeId(url: string): string {
+  if (!url) return "2_i3Iw0rZPo";
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : "2_i3Iw0rZPo";
+}
 
 export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const consecutiveErrors = useRef(0);
-  const lastSwitchTime = useRef<number>(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.5);
-  const [isMuted, setIsMuted] = useState(false);
-  const [errorStatus, setErrorStatus] = useState<string | null>(null);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [activeUrl, setActiveUrl] = useState(musicUrl);
-  const [showAutoplayAdvisory, setShowAutoplayAdvisory] = useState(true);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const audioFallbackRef = useRef<HTMLAudioElement | null>(null);
 
-  // Synchronize dynamic user settings changes
-  useEffect(() => {
-    if (musicUrl) {
-      setActiveUrl(musicUrl);
-      setErrorStatus(null);
-      consecutiveErrors.current = 0; // Reset errors when active url is updated
-      const matchedIdx = FALLBACK_MELODIES.findIndex(m => m.url === musicUrl);
-      if (matchedIdx !== -1) {
-        setCurrentTrackIndex(matchedIdx);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.85);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showAutoplayAdvisory, setShowAutoplayAdvisory] = useState(true);
+  const [showMiniPlayer, setShowMiniPlayer] = useState(true);
+  
+  // Dynamic audio stream state: 'youtube' or 'fallback'
+  const [audioSource, setAudioSource] = useState<'youtube' | 'fallback'>('youtube');
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  // Extract the specific romantic music video request which is '2_i3Iw0rZPo'
+  const requestedYtId = getYouTubeId(musicUrl) || "2_i3Iw0rZPo";
+
+  // Extremely beautiful and universal romantic acoustic loop for fail-safe play
+  const ROMANTIC_PIANO_MP3 = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3";
+
+  // Dispatch postMessage command safely to YouTube iframe (requires enablejsapi=1)
+  const sendYtCommand = (func: string, args: any = '') => {
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      try {
+        iframeRef.current.contentWindow.postMessage(
+          JSON.stringify({ event: 'command', func, args }),
+          '*'
+        );
+      } catch (err) {
+        console.warn("Could not dispatch YouTube postMessage command:", err);
       }
     }
-  }, [musicUrl]);
+  };
 
-  // Handle active music track loading and initial attempt
+  // Harmonize state changes (Play / Pause / Volume / Mute)
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.src = activeUrl;
-      // Pre-load metadata
-      audioRef.current.load();
-      
-      // If was playing, keep playing
-      if (isPlaying) {
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((err) => {
-            console.warn("Autoplay block or source switch failure:", err);
-            setIsPlaying(false);
-          });
+    if (isPlaying) {
+      if (audioSource === 'youtube') {
+        // Play YouTube track
+        sendYtCommand('playVideo');
+        sendYtCommand('unMute');
+        sendYtCommand('setVolume', isMuted ? 0 : volume * 105);
+        
+        // Ensure standard audio tag is quiet
+        if (audioFallbackRef.current) {
+          audioFallbackRef.current.pause();
+        }
+      } else {
+        // Play Native Fallback track
+        sendYtCommand('pauseVideo');
+        if (audioFallbackRef.current) {
+          audioFallbackRef.current.volume = isMuted ? 0 : volume;
+          audioFallbackRef.current.play().catch(() => {});
         }
       }
-    }
-  }, [activeUrl]);
-
-  // Aggressive browser media policies bypassed by high sensitivity listener
-  useEffect(() => {
-    const attemptAutoplay = () => {
-      if (audioRef.current) {
-        audioRef.current.play()
-          .then(() => {
-            setIsPlaying(true);
-            setErrorStatus(null);
-            setShowAutoplayAdvisory(false);
-            cleanup();
-          })
-          .catch((err) => {
-            console.warn("Soft autoplay interaction check:", err);
-          });
+    } else {
+      // Pause both sources
+      sendYtCommand('pauseVideo');
+      if (audioFallbackRef.current) {
+        audioFallbackRef.current.pause();
       }
+    }
+  }, [isPlaying, audioSource, volume, isMuted]);
+
+  // Synchronize dynamic volume/mute tweaks instantly
+  useEffect(() => {
+    const volPercent = isMuted ? 0 : volume * 105;
+    if (audioSource === 'youtube') {
+      sendYtCommand('setVolume', volPercent);
+    } else if (audioFallbackRef.current) {
+      audioFallbackRef.current.volume = isMuted ? 0 : volume;
+    }
+  }, [volume, isMuted, audioSource]);
+
+  // Handle single physical gesture activation (one-shot wake-up listener)
+  // This completely stops event listener spamming & avoids crashing the IFrame during scroll, etc.
+  useEffect(() => {
+    let triggered = false;
+
+    const activateAudioOnGesture = () => {
+      if (triggered) return;
+      triggered = true;
+      setHasInteracted(true);
+      setShowAutoplayAdvisory(false);
+      setIsPlaying(true);
+
+      // Perform single-time unmuting and playing trigger on both sources
+      sendYtCommand('playVideo');
+      sendYtCommand('unMute');
+      sendYtCommand('setVolume', volume * 105);
+
+      if (audioFallbackRef.current) {
+        audioFallbackRef.current.volume = volume;
+        audioFallbackRef.current.play().catch((e) => {
+          console.log("Direct native player audio play policy restricted:", e);
+        });
+      }
+
+      // Turn off wake up triggers entirely to save CPU and event loops
+      cleanUpGestureListeners();
     };
 
-    const cleanup = () => {
-      document.removeEventListener('click', attemptAutoplay);
-      document.removeEventListener('keydown', attemptAutoplay);
-      document.removeEventListener('touchstart', attemptAutoplay);
-      document.removeEventListener('touchend', attemptAutoplay);
-      document.removeEventListener('focus', attemptAutoplay);
+    const cleanUpGestureListeners = () => {
+      window.removeEventListener('click', activateAudioOnGesture);
+      window.removeEventListener('touchstart', activateAudioOnGesture);
+      window.removeEventListener('mousedown', activateAudioOnGesture);
+      window.removeEventListener('keydown', activateAudioOnGesture);
+      window.removeEventListener('scroll', activateAudioOnGesture);
     };
 
-    document.addEventListener('click', attemptAutoplay);
-    document.addEventListener('keydown', attemptAutoplay);
-    document.addEventListener('touchstart', attemptAutoplay);
-    document.addEventListener('touchend', attemptAutoplay);
-    document.addEventListener('focus', attemptAutoplay);
+    window.addEventListener('click', activateAudioOnGesture, { once: true });
+    window.addEventListener('touchstart', activateAudioOnGesture, { passive: true, once: true });
+    window.addEventListener('mousedown', activateAudioOnGesture, { once: true });
+    window.addEventListener('keydown', activateAudioOnGesture, { once: true });
+    window.addEventListener('scroll', activateAudioOnGesture, { passive: true, once: true });
 
-    // Initial soft check
-    setTimeout(attemptAutoplay, 800);
+    // Fallback automatic playback trigger in case browser setup allows early play
+    const autoPlayTimer = setTimeout(() => {
+      if (!triggered) {
+        activateAudioOnGesture();
+      }
+    }, 2800);
 
     return () => {
-      cleanup();
+      cleanUpGestureListeners();
+      clearTimeout(autoPlayTimer);
     };
-  }, [activeUrl]);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : volume;
-    }
-  }, [volume, isMuted]);
-
-  // Handle stream error state and automatically fall back
-  const handleAudioError = () => {
-    const errorObj = audioRef.current?.error;
-    
-    // If the error was just an aborted load (e.g. changing dynamic src), ignore it
-    // HTML5 Audio error code 1 corresponds to MEDIA_ERR_ABORTED
-    if (errorObj && errorObj.code === 1) {
-      console.log("Ignored audio load abort (code 1)");
-      return;
-    }
-
-    const now = Date.now();
-    // Throttle fallback switches to at most once per 2 seconds to avoid any rapid cascades
-    if (now - lastSwitchTime.current < 2000) {
-      console.warn("Throttling excessively rapid fallback switch attempt");
-      return;
-    }
-    lastSwitchTime.current = now;
-
-    console.warn(`Audio source failed to load: ${activeUrl}. Error detail:`, errorObj ? `code ${errorObj.code}, ${errorObj.message}` : "unknown");
-    
-    // Prevent infinite loop if all sources fail (such as being offline)
-    if (consecutiveErrors.current > 6) {
-      console.error("All fallback sources failed consecutively. Pausing retries to prevent loop freeze.");
-      setErrorStatus("Tap any button/card to trigger audio!");
-      setIsPlaying(false);
-      return;
-    }
-
-    consecutiveErrors.current += 1;
-    
-    const nextIdx = (currentTrackIndex + 1) % FALLBACK_MELODIES.length;
-    setCurrentTrackIndex(nextIdx);
-    const fallbackTrack = FALLBACK_MELODIES[nextIdx];
-    setActiveUrl(fallbackTrack.url);
-    setErrorStatus(`Switched to: ${fallbackTrack.name}`);
-    
-    // Automatically dismiss warning notification after 4.5 seconds
-    setTimeout(() => {
-      setErrorStatus(null);
-    }, 4500);
-  };
+  }, []);
 
   const togglePlay = () => {
-    if (!audioRef.current) return;
+    setIsPlaying(prev => !prev);
+    setShowAutoplayAdvisory(false);
+  };
 
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      consecutiveErrors.current = 0; // Reset error counts on play attempt
-      audioRef.current.play()
-        .then(() => {
-          setIsPlaying(true);
-          setErrorStatus(null);
-          setShowAutoplayAdvisory(false);
-        })
-        .catch((err) => {
-          console.warn("Playback block:", err);
-          setErrorStatus("Tap any key/button to trigger music!");
-          setTimeout(() => {
-            setErrorStatus(null);
-          }, 3000);
-        });
+  const handleSliderVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    setVolume(val);
+    if (val > 0) {
+      setIsMuted(false);
     }
   };
 
-  const forceSwitchNextMelody = () => {
-    consecutiveErrors.current = 0; // Reset error counts on force track switch
-    const nextIdx = (currentTrackIndex + 1) % FALLBACK_MELODIES.length;
-    setCurrentTrackIndex(nextIdx);
-    const nextMel = FALLBACK_MELODIES[nextIdx];
-    setActiveUrl(nextMel.url);
+  const switchSource = (source: 'youtube' | 'fallback') => {
+    setAudioSource(source);
     setIsPlaying(true);
-    setErrorStatus(`Broadcasting: ${nextMel.name}`);
-    setTimeout(() => {
-      setErrorStatus(null);
-    }, 3000);
-  };
-
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setVolume(val);
-    if (val > 0) setIsMuted(false);
-  };
-
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
+    setShowAutoplayAdvisory(false);
   };
 
   return (
-    <div className="fixed bottom-4 left-4 sm:left-auto sm:right-4 z-50 flex flex-col items-end gap-1.5 select-none max-w-[320px]">
+    <div className="fixed bottom-4 left-4 sm:left-auto sm:right-4 z-50 flex flex-col items-end gap-2.5 select-none max-w-[290px] w-full animate-fade-in">
       
-      {/* Soft interactive hint indicating how to wake up unplayed music */}
-      {showAutoplayAdvisory && !isPlaying && (
-        <div className="bg-pink-600 text-white text-[10px] sm:text-xs font-bold font-serif rounded-2xl px-3.5 py-2 shadow-xl border border-pink-400 flex items-center gap-1.5 animate-bounce">
-          <AlertCircle size={14} className="shrink-0" />
-          <span>🎵 Tap anywhere on our Sanctuary to play her song!</span>
+      {/* 
+        Aesthetic "Romantic TV Screen" visual portal!
+        By keeping the YouTube frame visual and beautiful inside the screen, we ensure high compatibility.
+        If the YouTube IFrame is blocked locally, they can easily press the direct switch!
+      */}
+      {showMiniPlayer && (
+        <div className="w-full bg-slate-900/95 border-2 border-pink-300 rounded-3xl p-3 shadow-2xl flex flex-col gap-2 relative transition-all duration-300">
+          
+          <div className="flex items-center justify-between border-b border-pink-500/20 pb-2 mb-1">
+            <span className="text-[10px] font-black tracking-widest text-pink-400 uppercase font-mono flex items-center gap-1.5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-pink-500"></span>
+              </span>
+              <span>Our Love Radio 📻</span>
+            </span>
+            <button 
+              onClick={() => setShowMiniPlayer(false)}
+              className="text-[9px] font-bold text-gray-400 hover:text-white bg-white/10 rounded-lg px-2 py-0.5 pointer-events-auto cursor-pointer"
+            >
+              Hide TV
+            </button>
+          </div>
+
+          {/* Real YouTube Embed player */}
+          {audioSource === 'youtube' ? (
+            <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black shadow-inner border border-white/10">
+              <iframe
+                ref={iframeRef}
+                id="yt-iframe-player"
+                src={`https://www.youtube.com/embed/${requestedYtId}?enablejsapi=1&autoplay=1&mute=1&loop=1&playlist=${requestedYtId}&controls=0&playsinline=1&rel=0&origin=${encodeURIComponent(window.location.origin)}`}
+                allow="autoplay; encrypted-media"
+                className="w-full h-full object-cover"
+                title="YouTube Romantic Stream"
+              />
+              <div className="absolute inset-0 bg-pink-500/10 mix-blend-color pointer-events-none" />
+            </div>
+          ) : (
+            <div className="aspect-video w-full rounded-2xl bg-gradient-to-br from-pink-900/80 to-purple-900/90 flex flex-col items-center justify-center border border-pink-500/30 text-center px-4 relative overflow-hidden">
+              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+              <div className="heart-pulsing text-3xl mb-1.5">💖</div>
+              <p className="text-[11px] font-black tracking-wider text-pink-300 uppercase font-serif animate-pulse">Direct Audio Connected</p>
+              <p className="text-[10px] text-white/70 italic mt-1 leading-normal">"Fail-Safe Beautiful Melody"</p>
+            </div>
+          )}
+
+          {/* Quick source switch panel (Hindi support instructions to explain to the user) */}
+          <div className="grid grid-cols-2 gap-1.5 mt-1 border-t border-white/5 pt-2">
+            <button
+              onClick={() => switchSource('youtube')}
+              className={`flex items-center justify-center gap-1 py-1 rounded-xl text-[9px] font-bold transition-all cursor-pointer ${
+                audioSource === 'youtube' 
+                  ? 'bg-pink-500 text-white shadow-md' 
+                  : 'bg-white/10 text-gray-300 hover:bg-white/15'
+              }`}
+            >
+              <Tv size={11} />
+              <span>YouTube Video</span>
+            </button>
+            <button
+              onClick={() => switchSource('fallback')}
+              className={`flex items-center justify-center gap-1 py-1 rounded-xl text-[9px] font-bold transition-all cursor-pointer ${
+                audioSource === 'fallback' 
+                  ? 'bg-purple-650 text-white shadow-md' 
+                  : 'bg-white/10 text-gray-300 hover:bg-white/15'
+              }`}
+            >
+              <HardDrive size={11} />
+              <span>Backup Audio</span>
+            </button>
+          </div>
+
+          <p className="text-[9.5px] text-center text-pink-300/90 bg-pink-950/40 rounded-lg py-1 px-1.5 mt-0.5 leading-tight">
+            {audioSource === 'youtube' 
+              ? "🎥 YouTube Active (Click 'Backup' if you hear nothing!)" 
+              : "🎵 Backup Melody Active (Plays immediately everywhere!)"
+            }
+          </p>
         </div>
       )}
 
-      {/* Main audio element widget container */}
+      {/* Classic HTML5 background fallback audio stream */}
+      <audio 
+        ref={audioFallbackRef} 
+        src={ROMANTIC_PIANO_MP3} 
+        loop
+        className="hidden pointer-events-none w-0 h-0"
+      />
+
+      {/* Onscreen touch instruction bubble if state is quiet */}
+      {showAutoplayAdvisory && !isPlaying && (
+        <p className="bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 text-white text-[11px] font-bold font-serif rounded-full px-4.5 py-2 shadow-2xl border border-pink-300/30 flex items-center gap-2 animate-bounce cursor-pointer">
+          <span className="animate-pulse text-sm">💋</span>
+          <span>Click anywhere to hear our romantic song!</span>
+        </p>
+      )}
+
+      {/* Primary controller button & player wrap */}
       <div 
         id="music-player-widget"
-        className="glass-card bg-white/80 backdrop-blur-md border border-pink-200/50 shadow-lg rounded-3xl px-4 py-2.5 flex items-center gap-2.5 w-full hover:scale-102 transition-transform duration-300"
+        className="glass-card bg-white/95 backdrop-blur-md border border-pink-200/50 shadow-xl rounded-3xl px-4 py-2.5 flex items-center gap-3 w-full hover:scale-102 transition-transform duration-300"
       >
-        <audio 
-          ref={audioRef} 
-          loop 
-          onError={handleAudioError}
-          onPlay={() => {
-            setIsPlaying(true);
-            setShowAutoplayAdvisory(false);
-            consecutiveErrors.current = 0; // Reset error counts on successful playback
-          }} 
-          onPause={() => setIsPlaying(false)}
-        />
-
         <button
           id="btn-toggle-music"
           onClick={togglePlay}
-          className="w-10 h-10 rounded-full bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white transition-all cursor-pointer shadow-md shrink-0 relative group"
+          className="w-10 h-10 rounded-full bg-pink-500 hover:bg-pink-600 flex items-center justify-center text-white transition-all cursor-pointer shadow-md shrink-0 active:scale-95 duration-100"
           title={isPlaying ? "Pause music" : "Play music"}
         >
           {isPlaying ? (
-            <Pause size={18} fill="white" className="text-white active:scale-90 transition-transform" />
+            <Pause size={18} fill="white" className="text-white animate-pulse" />
           ) : (
-            <Play size={18} fill="white" className="text-white ml-0.5 active:scale-90 transition-transform" />
+            <Play size={18} fill="white" className="text-white ml-0.5" />
           )}
         </button>
 
-        <div className="flex flex-col justify-center w-24 shrink-0 overflow-hidden">
-          <span className="text-[9px] font-black tracking-widest text-pink-500 uppercase font-mono leading-none">
-            Sweet Vibe
+        <div className="flex flex-col justify-center w-28 shrink-0 overflow-hidden">
+          <span className="text-[9px] font-black tracking-widest text-pink-500 uppercase font-mono leading-none flex items-center gap-1.5">
+            <span>Now Playing</span>
+            {isPlaying && <span className="animate-ping inline-flex h-1.5 w-1.5 rounded-full bg-pink-400"></span>}
           </span>
-          <span className="text-xs font-bold text-slate-800 truncate block mt-0.5" title={FALLBACK_MELODIES[currentTrackIndex].name}>
-            {isPlaying ? FALLBACK_MELODIES[currentTrackIndex].name : "Melody paused"}
+          <span className="text-xs font-bold text-slate-800 truncate block mt-1" title="Beautiful Birthday Video">
+            Beautiful Birthday 🎂
           </span>
         </div>
 
-        {/* Next Track Switcher helper */}
-        <button
-          type="button"
-          onClick={forceSwitchNextMelody}
-          className="p-1 px-1.5 rounded-lg bg-pink-50 hover:bg-pink-100 text-pink-600 hover:text-pink-700 transition-all cursor-pointer shrink-0"
-          title="Switch loving melody"
-        >
-          <RefreshCw size={13} className="animate-spin-slow" />
-        </button>
-
-        {/* Animated Music Bars Equalizer */}
+        {/* Dynamic music wave visualizer */}
         <div className="flex items-end gap-0.5 h-4 w-5 shrink-0">
           {[...Array(4)].map((_, i) => (
             <div
@@ -273,13 +309,14 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
           ))}
         </div>
 
-        <div className="flex items-center gap-1 border-l border-pink-100 pl-2 shrink-0">
+        <div className="flex items-center gap-1.5 border-l border-pink-100 pl-2.5 shrink-0">
           <button 
             id="btn-toggle-mute"
-            onClick={toggleMute} 
+            onClick={() => setIsMuted(prev => !prev)} 
             className="text-slate-400 hover:text-pink-600 cursor-pointer transition-colors"
+            title={isMuted ? "Unmute" : "Mute"}
           >
-            {isMuted || volume === 0 ? <VolumeX size={14} /> : <Volume2 size={14} />}
+            {isMuted || volume === 0 ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
           <input
             id="vol-slider"
@@ -288,18 +325,11 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
             max="1"
             step="0.05"
             value={isMuted ? 0 : volume}
-            onChange={handleVolumeChange}
+            onChange={handleSliderVolume}
             className="w-10 h-1 accent-pink-500 bg-pink-100 rounded-lg appearance-none cursor-pointer"
           />
         </div>
-
-        {errorStatus && (
-          <span className="absolute -top-8 right-2 bg-pink-50 text-[10px] border border-pink-100 text-pink-600 rounded-md px-2 py-0.5 whitespace-nowrap shadow-sm">
-            {errorStatus}
-          </span>
-        )}
       </div>
     </div>
   );
 }
-
