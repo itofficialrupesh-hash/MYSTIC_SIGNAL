@@ -342,6 +342,9 @@ export default function App() {
         <p className="text-[10px] text-pink-400/80 mt-1 uppercase tracking-widest font-mono">
           Last by Ruu ✨
         </p>
+        <p className="text-[10px] text-pink-450/70 mt-1.5 italic font-serif">
+          sorry 🥺❤️
+        </p>
       </footer>
 
     </div>
