@@ -56,6 +56,41 @@ export default function App() {
       const savedMemories = localStorage.getItem('love_memories');
       const savedLetters = localStorage.getItem('love_letters');
 
+      // Unique signature representing exact compiled default values to detect any developer file alterations
+      const currentDefaultsSign = JSON.stringify({
+        coupleOne: DEFAULT_CONFIG.coupleNameOne,
+        coupleTwo: DEFAULT_CONFIG.coupleNameTwo,
+        passcode: DEFAULT_CONFIG.specialDate,
+        hint: DEFAULT_CONFIG.specialDateHint,
+        music: DEFAULT_CONFIG.bgMusicUrl,
+        promisesLength: DEFAULT_CONFIG.promises.length,
+        reasonsLength: DEFAULT_CONFIG.reasonsWhySpecial.length,
+        photosLength: DEFAULT_PHOTOS.length,
+        storyLength: DEFAULT_STORY.length,
+        memoriesLength: DEFAULT_MEMORIES.length,
+        lettersLength: DEFAULT_LETTERS.length
+      });
+
+      const savedDefaultsSign = localStorage.getItem('love_defaults_signature_v2');
+
+      if (savedDefaultsSign !== currentDefaultsSign) {
+        // Code defaults have been edited in defaultData.ts! Reset localStorage keys so updates take effect immediately.
+        localStorage.setItem('love_defaults_signature_v2', currentDefaultsSign);
+        
+        localStorage.removeItem('love_config');
+        localStorage.removeItem('love_photos');
+        localStorage.removeItem('love_story');
+        localStorage.removeItem('love_memories');
+        localStorage.removeItem('love_letters');
+
+        setConfig(DEFAULT_CONFIG);
+        setPhotos(DEFAULT_PHOTOS);
+        setStory(DEFAULT_STORY);
+        setMemories(DEFAULT_MEMORIES);
+        setLetters(DEFAULT_LETTERS);
+        return;
+      }
+
       if (savedConfig) {
         const parsed = JSON.parse(savedConfig);
         // Automatic sweet music track migration to stable fail-safe SoundHelix/YouTube soundtrack
@@ -200,8 +235,28 @@ export default function App() {
             <div className="absolute bottom-2 left-6 text-2xl opacity-15 select-none cute-sticker">✨</div>
             
             <div className="space-y-1.5 text-center md:text-left select-none">
-              <div className="flex justify-center md:justify-start items-center gap-2">
-                <Heart size={18} fill="rgba(219,39,119,0.7)" className="text-pink-600 heart-pulsing" />
+              <div className="flex flex-col md:flex-row items-center gap-3">
+                <div className="relative shrink-0">
+                  <svg className="w-8 h-8 rounded-full filter drop-shadow-xs select-none" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="50" fill="url(#dashBrandGrad)" />
+                    <path d="M30 50 C30 35 45 30 50 42 C55 54 70 48 70 65 C70 78 52 75 48 65 C44 55 54 48 50 42 C46 36 38 38 38 50 Z" fill="url(#dashBrandWave)" />
+                    <circle cx="50" cy="50" r="4" fill="#ffffff" />
+                    <defs>
+                      <linearGradient id="dashBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#1e293b" />
+                        <stop offset="100%" stopColor="#0f172a" />
+                      </linearGradient>
+                      <linearGradient id="dashBrandWave" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#ec4899" />
+                        <stop offset="100%" stopColor="#8b5cf6" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500"></span>
+                  </span>
+                </div>
                 <h1 className="font-serif text-2xl md:text-3xl font-black text-gray-800 tracking-tight">Our Secret Sanctuary</h1>
               </div>
               <p className="text-xs font-semibold text-pink-500/80 uppercase tracking-widest font-mono">
