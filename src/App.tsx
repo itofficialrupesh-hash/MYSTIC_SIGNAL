@@ -15,6 +15,7 @@ import OpenWhenLetters from './components/OpenWhenLetters';
 import SecretRoom from './components/SecretRoom';
 import LovelyLogo from './components/LovelyLogo';
 import NeonTextHeart from './components/NeonTextHeart';
+import SecretApologyZone from './components/SecretApologyZone';
 
 // Types and Defaults
 import { LoveConfig, MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter } from './types';
@@ -433,6 +434,9 @@ export default function App() {
           by your Ruu ✨
         </p>
       </footer>
+
+      {/* GLOBAL SECRET APOLOGY ZONE BADGE & CARD CONTROLLER */}
+      <SecretApologyZone config={config} onTriggerConfetti={triggerHeartsShower} />
 
     </div>
   );

@@ -15,7 +15,7 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
   const playerRef = useRef<any>(null);
   const initializedRef = useRef<boolean>(false);
   const userInteractedRef = useRef<boolean>(false);
-  const [isMinimized, setIsMinimized] = useState<boolean>(false);
+  const [isMinimized, setIsMinimized] = useState<boolean>(true);
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [playbackStatus, setPlaybackStatus] = useState<string>("Initializing...");
 
@@ -191,57 +191,59 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
 
   return (
     <div 
-      className="fixed bottom-4 left-4 z-50 bg-slate-950/95 backdrop-blur-md p-4 rounded-2xl border border-pink-500/35 shadow-[0_0_25px_rgba(236,72,153,0.35)] flex flex-col items-center gap-2.5 transition-all duration-300 md:bottom-6 md:left-6 w-[230px]"
+      className={`fixed bottom-4 left-4 z-50 bg-slate-950/90 backdrop-blur-md rounded-xl border border-pink-500/25 shadow-[0_0_15px_rgba(236,72,153,0.25)] flex flex-col items-center gap-1.5 transition-all duration-300 md:bottom-5 md:left-5 ${
+        isMinimized ? 'w-[110px] p-1.5 opacity-90 hover:opacity-100 hover:scale-[1.03]' : 'w-[180px] p-2.5'
+      }`}
     >
-      <div className="flex items-center justify-between w-full gap-2 px-0.5">
-        <span className="text-[11px] font-black text-pink-300 tracking-wider uppercase flex items-center gap-1 select-none drop-shadow-[0_0_10px_rgba(236,72,153,0.4)]">
-          <span className="animate-pulse">💖</span> Magic Music
+      <div className="flex items-center justify-between w-full gap-1 px-0.5">
+        <span className="text-[9.5px] font-black text-pink-300 tracking-wider uppercase flex items-center gap-0.5 select-none drop-shadow-[0_0_8px_rgba(236,72,153,0.3)]">
+          {isMinimized ? "🎵" : "💖 Music"}
         </span>
         <button 
           onClick={() => setIsMinimized(!isMinimized)}
-          className="text-[10px] bg-pink-900/40 text-pink-300 hover:bg-pink-800/50 hover:text-pink-100 px-2.5 py-1 rounded-md border border-pink-500/20 transition-all font-bold"
+          className="text-[9px] bg-pink-900/40 text-pink-200 hover:bg-pink-800/60 hover:text-white px-2 py-0.5 rounded transition-all font-bold"
           title={isMinimized ? "Maximize Music Player" : "Minimize Music Player"}
         >
           {isMinimized ? "Show" : "Hide"}
         </button>
       </div>
 
-      <div className={`flex flex-col items-center gap-2.5 w-full transition-all duration-300 ${isMinimized ? 'h-0 opacity-0 pointer-events-none overflow-hidden mt-0' : 'h-auto opacity-100 mt-1'}`}>
+      <div className={`flex flex-col items-center gap-2 w-full transition-all duration-300 ${isMinimized ? 'h-0 opacity-0 pointer-events-none overflow-hidden mt-0' : 'h-auto opacity-100 mt-1'}`}>
         
         {/* 
           Keep the YouTube iframe element PERMANENTLY mounted in the DOM.
           Do not conditionally unmount this wrapper.
         */}
-        <div className="rounded-lg overflow-hidden border border-pink-500/30 bg-black relative shadow-inner transition-all duration-300 w-[196px] h-[110px] mb-1">
+        <div className="rounded-lg overflow-hidden border border-pink-500/20 bg-black relative shadow-inner transition-all duration-300 w-[156px] h-[90px] mb-0.5">
           <div id="bg-music-iframe-api" className="w-full h-full" />
         </div>
         
-        <div className="flex flex-col gap-2 items-center w-full">
+        <div className="flex flex-col gap-1.5 items-center w-full">
           {/* Reactive Mute-Status button */}
           <button
             onClick={handleManualPlayUnmute}
-            className={`w-full text-[11px] font-extrabold py-2 px-3 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 ${
+            className={`w-full text-[10px] font-extrabold py-1.5 px-2 rounded-lg active:scale-95 transition-all flex items-center justify-center gap-1 ${
               isMuted 
-                ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white animate-pulse shadow-[0_0_15px_rgba(236,72,153,0.35)] hover:from-pink-600 hover:to-rose-600' 
-                : 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-950/80'
+                ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white animate-pulse shadow-xs hover:from-pink-600 hover:to-rose-600' 
+                : 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-950/80'
             }`}
           >
-            {isMuted ? "🔊 Tap to Play & Unmute" : "🔇 Mute Background"}
+            {isMuted ? "🔊 Tap to Play" : "🔇 Mute"}
           </button>
           
-          <div className="flex items-center gap-1 justify-center select-none mt-0.5">
-            <span className="text-[9px] uppercase tracking-widest font-mono text-zinc-400 font-semibold">
+          <div className="flex items-center gap-0.5 justify-center select-none">
+            <span className="text-[8px] uppercase tracking-widest font-mono text-zinc-400 font-semibold">
               Status:
             </span>
-            <span className={`text-[9.5px] font-extrabold px-1 rounded uppercase tracking-wider ${
+            <span className={`text-[8.5px] font-extrabold px-0.5 rounded uppercase tracking-wider ${
               isMuted ? 'text-pink-400 animate-pulse' : 'text-emerald-400'
             }`}>
               {playbackStatus}
             </span>
           </div>
 
-          <p className="text-[9.5px] text-pink-300/80 font-semibold text-center leading-normal select-none px-1">
-            Touching or tapping anywhere on the page starts the music automatically! 💕
+          <p className="text-[8px] text-pink-300/70 font-semibold text-center leading-snug select-none px-1">
+            Tap screen to play music! 💕
           </p>
         </div>
       </div>
