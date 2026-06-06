@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Decline all reads/writes by default)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions for validating the schema and preventing Denial of Wallet (Resource exhaustion attacks)
+    function isValidUnlockAttempt(data) {
+      return data.keys().hasAll(['value', 'isCorrect', 'timestamp'])
+        && data.keys().size() == 3
+        && data.value is string
+        && data.value.size() <= 100
+        && data.isCorrect is bool;
+    }
+
+    // Lock Down the Unlock Attempts collection
+    match /unlock_attempts/{attemptId} {
+      // Anyone can submit a guess, but it must conform to the valid schema structure
+      allow create: if isValidUnlockAttempt(request.resource.data);
+      // Deny read/update/delete completely for high privacy and zero leaks
+      allow read, update, delete: if false;
+    }
+  }
+}

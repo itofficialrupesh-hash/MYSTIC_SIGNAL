@@ -1,0 +1,31 @@
+{
+  "entities": {
+    "UnlockAttempt": {
+      "title": "UnlockAttempt",
+      "description": "Records every attempt to unlock the digital love sanctuary",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "The passcode or date string entered by the visitor"
+        },
+        "isCorrect": {
+          "type": "boolean",
+          "description": "Whether this attempts successfully unlocked the secret space"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when this password attempt was made"
+        }
+      },
+      "required": ["value", "isCorrect", "timestamp"]
+    }
+  },
+  "firestore": {
+    "unlock_attempts/{attemptId}": {
+      "schema": "UnlockAttempt",
+      "description": "Collection storing password submission attempts"
+    }
+  }
+}

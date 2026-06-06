@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Lock, Unlock, HelpCircle, Heart, Star, Compass, Gift, Calendar, Clock, Crown } from 'lucide-react';
 import { LoveConfig } from '../types';
 import LovelyLogo from './LovelyLogo';
+import { saveUnlockAttempt } from '../firebase';
 
 interface LandingPageProps {
   config: LoveConfig;
@@ -121,8 +122,16 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
     
     const targetClean = cleanString(config.specialDate);
     const inputClean = cleanString(passwordInput);
+    const isCorrect = (inputClean === targetClean || inputClean === '1122' || passwordInput.trim() === config.specialDate);
 
-    if (inputClean === targetClean || inputClean === '1122' || passwordInput.trim() === config.specialDate) {
+    // Save attempt value to Firebase Firestore
+    if (passwordInput.trim()) {
+      saveUnlockAttempt(passwordInput.trim(), isCorrect).catch(err => {
+        console.error("Failed to store attempt in Firebase Firestore:", err);
+      });
+    }
+
+    if (isCorrect) {
       setIsSuccess(true);
       setIsError(false);
       setFeedbackMsg("✨ Correct! Opening our digital love sanctuary...");
