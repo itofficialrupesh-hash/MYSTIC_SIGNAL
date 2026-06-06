@@ -450,7 +450,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                 <span>Our memories</span>
               </div>
             </div>
-            <p className="mt-2.5 font-serif text-[10px] text-pink-300/90 font-bold text-center">School 2023 💖</p>
+            <p className="mt-2.5 font-serif text-[10px] text-pink-300/90 font-bold text-center">School 2021 💖</p>
           </div>
 
           {/* Envelope 1 (Open When) */}
