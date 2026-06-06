@@ -149,6 +149,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
     } else {
       setIsError(true);
       setFeedbackMsg(`❌ Hmm, that magic date doesn't match. Please try again!`);
+      setPasswordInput("");
       setTimeout(() => {
         setIsError(false);
       }, 800);
@@ -326,10 +327,11 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                 <input
                   id="special-date-cookie"
                   type="text"
-                  placeholder="DD/MM/YYYY"
+                  placeholder="4-Digit Passcode"
                   value={passwordInput}
                   onChange={(e) => {
-                    setPasswordInput(e.target.value);
+                    const cleanVal = e.target.value.slice(0, 4);
+                    setPasswordInput(cleanVal);
                     if (typeof (window as any).__unmuteThemeMusic === 'function') {
                       try {
                         (window as any).__unmuteThemeMusic();
@@ -346,7 +348,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                   }}
                   onBlur={() => setIsFocused(false)}
                   disabled={isSuccess}
-                  maxLength={16}
+                  maxLength={4}
                   className="absolute inset-0 w-full h-full opacity-0 z-25 cursor-text text-center text-lg focus:outline-none"
                   autoComplete="off"
                 />
@@ -365,7 +367,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                 >
                   {passwordInput.length === 0 ? (
                     <span className="text-pink-300/80 font-mono tracking-widest text-base font-semibold select-none">
-                      DD/MM/YYYY
+                      4-Digit Code
                     </span>
                   ) : (
                     <div className="flex items-center gap-1.5 justify-center flex-wrap max-w-[90%]">

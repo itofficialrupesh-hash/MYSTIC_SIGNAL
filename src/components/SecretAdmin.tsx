@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, Save, RotateCcw, Image, Plus, Trash2, 
   Settings, Heart, Sparkles, Sliders, Music, 
-  Download, Upload, Check, HelpCircle 
+  Download, Upload, Check, HelpCircle, Lock
 } from 'lucide-react';
 import { LoveConfig, MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter } from '../types';
+import { getUnlockAttempts, deleteUnlockAttempt } from '../firebase';
 
 interface SecretAdminProps {
   config: LoveConfig;
@@ -45,8 +46,60 @@ export default function SecretAdmin({
   const [localLetters, setLocalLetters] = useState<OpenWhenLetter[]>([...letters]);
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'basics' | 'photos' | 'story' | 'letters' | 'promises'>('basics');
+  const [activeTab, setActiveTab] = useState<'basics' | 'photos' | 'story' | 'letters' | 'promises' | 'attempts'>('basics');
   
+  // Custom Attempts state
+  const [attempts, setAttempts] = useState<{ id: string; value: string; isCorrect: boolean; timestamp: string }[]>([]);
+  const [loadingAttempts, setLoadingAttempts] = useState(false);
+  const [attemptsError, setAttemptsError] = useState<string | null>(null);
+
+  const fetchAttempts = async () => {
+    setLoadingAttempts(true);
+    setAttemptsError(null);
+    try {
+      const data = await getUnlockAttempts();
+      setAttempts(data);
+    } catch (err: any) {
+      setAttemptsError("Could not retrieve lock security logs. Check database connection or permissions.");
+      console.error(err);
+    } finally {
+      setLoadingAttempts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'attempts') {
+      fetchAttempts();
+    }
+  }, [activeTab]);
+
+  const handleDeleteAttempt = async (id: string) => {
+    if (confirm("Are you sure you want to delete this attempt log?")) {
+      try {
+        await deleteUnlockAttempt(id);
+        setAttempts(prev => prev.filter(a => a.id !== id));
+      } catch (err) {
+        alert("Failed to delete log entry");
+      }
+    }
+  };
+
+  const handleClearAllAttempts = async () => {
+    if (confirm("Are you sure you want to completely clear all logged attempts? This will delete them one by one.")) {
+      setLoadingAttempts(true);
+      try {
+        for (const atm of attempts) {
+          await deleteUnlockAttempt(atm.id);
+        }
+        setAttempts([]);
+      } catch (err) {
+        alert("Failed to clear some attempts.");
+      } finally {
+        setLoadingAttempts(false);
+      }
+    }
+  };
+
   // Custom Photo Adding States
   const [photoUrl, setPhotoUrl] = useState('');
   const [photoCaption, setPhotoCaption] = useState('');
@@ -278,6 +331,16 @@ export default function SecretAdmin({
                 <Music size={14} />
                 <span>Promises & Why Special</span>
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('attempts')}
+                className={`px-4 py-2 text-xs font-bold rounded-xl whitespace-nowrap text-left transition-colors cursor-pointer flex items-center gap-2 ${
+                  activeTab === 'attempts' ? 'bg-pink-100/60 text-pink-600' : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                <Lock size={14} className="text-pink-500" />
+                <span>Unlock Attempts Log 🔐</span>
+              </button>
             </nav>
           </div>
 
@@ -314,8 +377,11 @@ export default function SecretAdmin({
                 {activeTab === 'story' && 'Interactive Story Book Log'}
                 {activeTab === 'letters' && 'Open When heart-mail'}
                 {activeTab === 'promises' && 'Lifetime Promises list'}
+                {activeTab === 'attempts' && 'Visitor Lock Passcode Attempts 🔐'}
               </h2>
-              <p className="text-xs text-gray-400">Everything edits in real time locally</p>
+              <p className="text-xs text-gray-400">
+                {activeTab === 'attempts' ? 'Monitor password entry history live from Firestore database' : 'Everything edits in real time locally'}
+              </p>
             </div>
             <button 
               id="close-admin-header-btn"
@@ -781,6 +847,111 @@ export default function SecretAdmin({
                     ))}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* TAB 6: ATTEMPTS LOGS */}
+            {activeTab === 'attempts' && (
+              <div className="space-y-6 animate-fade-in text-gray-800">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl gap-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-700">Database Action Hub</h4>
+                    <p className="text-[10px] text-gray-400 font-medium">Fetch latest logs from Firestore or clear log database entries</p>
+                  </div>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={fetchAttempts}
+                      disabled={loadingAttempts}
+                      className="px-3 py-1.5 bg-pink-100/60 hover:bg-pink-100 text-pink-600 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      <RotateCcw size={12} className={loadingAttempts ? "animate-spin" : ""} />
+                      <span>{loadingAttempts ? "Loading..." : "Refresh Live"}</span>
+                    </button>
+                    {attempts.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllAttempts}
+                        disabled={loadingAttempts}
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all"
+                      >
+                        <Trash2 size={12} />
+                        <span>Clear All Logs</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {attemptsError && (
+                  <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-xs text-red-600 font-medium animate-pulse">
+                    ⚠️ {attemptsError}
+                  </div>
+                )}
+
+                {loadingAttempts && attempts.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2">
+                    <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+                    <span className="text-xs text-gray-400 font-medium font-sans animate-pulse">Connecting to Firestore database...</span>
+                  </div>
+                ) : attempts.length === 0 ? (
+                  <div className="p-8 text-center bg-gray-50/50 border border-dashed border-gray-100 rounded-3xl space-y-2">
+                    <div className="text-2xl select-none">🔒</div>
+                    <h5 className="text-xs font-bold text-gray-700">No attempts logged yet</h5>
+                    <p className="text-[11px] text-gray-400 max-w-xs mx-auto">
+                      Anytime someone types a passcode on the lock screen and submits it, the entered value will show up here in real time!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="border border-slate-100 rounded-2xl overflow-hidden divide-y divide-slate-50 bg-white">
+                    <div className="px-4 py-2.5 bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest grid grid-cols-12 gap-2 select-none">
+                      <span className="col-span-3">Status</span>
+                      <span className="col-span-4">Entered Passcode</span>
+                      <span className="col-span-4">Time & Date</span>
+                      <span className="col-span-1 text-right">Delete</span>
+                    </div>
+                    <div className="divide-y divide-slate-100 max-h-[400px] overflow-y-auto">
+                      {attempts.map((atm) => (
+                        <div key={atm.id} className="px-4 py-3.5 text-xs grid grid-cols-12 gap-2 items-center hover:bg-slate-50/50 transition-colors">
+                          <span className="col-span-3 flex items-center gap-1.5">
+                            {atm.isCorrect ? (
+                              <>
+                                <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold select-none">✓</span>
+                                <span className="font-extrabold text-emerald-600 text-[11px]">Correct</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="w-5 h-5 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-[10px] font-bold select-none">✗</span>
+                                <span className="font-extrabold text-red-500 text-[11px]">Failed</span>
+                              </>
+                            )}
+                          </span>
+                          <span className="col-span-4 font-mono font-bold text-pink-700 bg-pink-50/60 px-2.5 py-0.5 rounded-lg w-max text-[11px] border border-pink-100/50">
+                            {atm.value}
+                          </span>
+                          <span className="col-span-4 text-[11px] text-gray-400 font-mono">
+                            {new Date(atm.timestamp).toLocaleString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit'
+                            })}
+                          </span>
+                          <span className="col-span-1 text-right text-gray-800">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAttempt(atm.id)}
+                              className="text-gray-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer inline-block"
+                              title="Delete log entry"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

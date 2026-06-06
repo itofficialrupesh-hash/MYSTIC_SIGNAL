@@ -19,8 +19,9 @@ service cloud.firestore {
     match /unlock_attempts/{attemptId} {
       // Anyone can submit a guess, but it must conform to the valid schema structure
       allow create: if isValidUnlockAttempt(request.resource.data);
-      // Deny read/update/delete completely for high privacy and zero leaks
-      allow read, update, delete: if false;
+      // Allow reading and deleting attempts so the admin settings panel can display and manage them
+      allow read, delete: if true;
+      allow update: if false;
     }
   }
 }

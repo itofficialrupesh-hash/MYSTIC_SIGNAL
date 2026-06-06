@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, doc } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAPtLodRSN6DaIx89QANo346mM3E6xC6uo",
@@ -63,5 +63,46 @@ export async function saveUnlockAttempt(value: string, isCorrect: boolean) {
     });
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, collectionPath);
+  }
+}
+
+/**
+ * Fetches the list of unlock attempts from Firestore, ordered by most recent first.
+ */
+export async function getUnlockAttempts() {
+  const collectionPath = "unlock_attempts";
+  try {
+    const q = query(
+      collection(db, collectionPath),
+      orderBy("timestamp", "desc"),
+      limit(100)
+    );
+    const querySnapshot = await getDocs(q);
+    const attempts: { id: string; value: string; isCorrect: boolean; timestamp: string }[] = [];
+    querySnapshot.forEach((docSnapshot) => {
+      const data = docSnapshot.data();
+      attempts.push({
+        id: docSnapshot.id,
+        value: data.value || "",
+        isCorrect: !!data.isCorrect,
+        timestamp: data.timestamp || ""
+      });
+    });
+    return attempts;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, collectionPath);
+    return [];
+  }
+}
+
+/**
+ * Deletes a single unlock attempt log entry from Firestore.
+ */
+export async function deleteUnlockAttempt(id: string) {
+  const collectionPath = "unlock_attempts";
+  try {
+    await deleteDoc(doc(db, collectionPath, id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `${collectionPath}/${id}`);
   }
 }
