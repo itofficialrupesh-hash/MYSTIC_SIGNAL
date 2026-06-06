@@ -145,7 +145,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
 
       setTimeout(() => {
         onUnlocked();
-      }, 1200);
+      }, 250);
     } else {
       setIsError(true);
       setFeedbackMsg(`❌ Hmm, that magic date doesn't match. Please try again!`);
@@ -213,6 +213,15 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
         .animate-glow-heart {
           animation: customGlow 2.5s ease-in-out infinite;
           display: inline-block;
+        }
+        @keyframes heartPopIn {
+          0% { transform: scale(0); opacity: 0; }
+          70% { transform: scale(1.2) rotate(-5deg); opacity: 0.9; }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .animate-heart-pop {
+          display: inline-block;
+          animation: heartPopIn 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
         }
       `}</style>
 
@@ -363,9 +372,9 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
                       {passwordInput.split('').map((_, index) => (
                         <span 
                           key={index} 
-                          className="text-pink-500 text-[15px] select-none inline-block filter drop-shadow-[0_1px_2px_rgba(236,72,153,0.3)] animate-glow-heart"
+                          className="text-pink-500 text-[15px] select-none inline-block filter drop-shadow-[0_1px_2px_rgba(236,72,153,0.3)] animate-heart-pop"
                           style={{
-                            animationDelay: `${index * 60}ms`
+                            animationDelay: `${index * 15}ms`
                           }}
                         >
                           ❤️
