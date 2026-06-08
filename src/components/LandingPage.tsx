@@ -3,10 +3,13 @@ import { Lock, Unlock, HelpCircle, Heart, Star, Compass, Gift, Calendar, Clock, 
 import { LoveConfig } from '../types';
 import LovelyLogo from './LovelyLogo';
 import { saveUnlockAttempt } from '../firebase';
+import BestieZone from './BestieZone';
+import BestiePasscodeLock from './BestiePasscodeLock';
 
 interface LandingPageProps {
   config: LoveConfig;
   onUnlocked: () => void;
+  onTriggerConfetti: () => void;
 }
 
 interface ClickEmoji {
@@ -18,7 +21,7 @@ interface ClickEmoji {
   rotation: number;
 }
 
-export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
+export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: LandingPageProps) {
   const [passwordInput, setPasswordInput] = useState('');
   const [isError, setIsError] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -27,6 +30,8 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [clickingHearts, setClickingHearts] = useState<ClickEmoji[]>([]);
   const [isFocused, setIsFocused] = useState(false);
+  const [showBestieAuth, setShowBestieAuth] = useState(false);
+  const [bestieUnlocked, setBestieUnlocked] = useState(false);
   
   // Birthday countdown state (Target: 25 November)
   const [timeLeft, setTimeLeft] = useState({
@@ -447,138 +452,39 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
           </div>
         </div>
 
-        {/* Right: Preview Gallery (Scrapbook Style Collage) */}
-        <div className="w-full lg:w-7/12 grid grid-cols-2 sm:grid-cols-3 gap-4 content-center bg-slate-950/40 backdrop-blur-md p-6 rounded-[32px] border border-pink-500/10 shadow-xl">
-          
-          {/* Polaroid 2 */}
-          <div 
-            onClick={() => handleScrapbookItemClick("Our Memories")}
-            className="bg-slate-900/90 p-2 pb-5 shadow-[0_0_15px_rgba(236,72,153,0.15)] rounded-2xl transform rotate-3 hover:rotate-0 hover:scale-105 transition-all duration-300 cursor-pointer border border-pink-500/30 hover:border-pink-400/50"
-          >
-            <div className="w-full h-24 bg-purple-950/40 rounded-lg border border-purple-500/20 flex items-center justify-center overflow-hidden grayscale contrast-125 hover:grayscale-0 transition-all">
-              <div className="text-purple-300 text-[10px] text-center font-bold tracking-wider px-1 uppercase flex flex-col items-center gap-1">
-                <span className="text-lg">🔒</span>
-                <span>Our memories</span>
-              </div>
+        {/* Right: Vanshika Bestie Zone Portal column */}
+        <div className="w-full lg:w-7/12 flex items-center justify-center">
+          {!bestieUnlocked ? (
+            <div className="w-full">
+              <BestiePasscodeLock 
+                onUnlockSuccess={() => {
+                  setBestieUnlocked(true);
+                  onTriggerConfetti();
+                }}
+                onTriggerConfetti={onTriggerConfetti}
+              />
             </div>
-            <p className="mt-2.5 font-serif text-[10px] text-pink-300/90 font-bold text-center">School 2021 💖</p>
-          </div>
-
-          {/* Envelope 1 (Open When) */}
-          <div 
-            onClick={() => handleScrapbookItemClick("Open When Sad Envelope")}
-            className="bg-pink-950/20 hover:bg-pink-950/40 rounded-xl border-2 border-dashed border-pink-500/30 p-3 flex flex-col items-center justify-center text-center shadow-inner cursor-pointer transition-all hover:scale-103"
-          >
-            <div className="text-2xl mb-1 select-none animate-bounce delay-1000">💌</div>
-            <p className="text-[10px] font-extrabold text-pink-300 uppercase leading-none tracking-tight font-sans">
-              Open When<br/><span className="text-[9px] text-pink-400 font-bold block pt-0.5">Sad</span>
-            </p>
-          </div>
-
-          {/* STORY DIARY CARD */}
-          <div 
-            onClick={() => handleScrapbookItemClick("Our Love Story Diary")}
-            className="col-span-2 bg-slate-900/40 hover:bg-slate-900/75 backdrop-blur-xs rounded-2xl p-3.5 border border-pink-500/15 cursor-pointer transition-all hover:scale-[1.01] flex items-center gap-3 shadow-xs"
-          >
-            <span className="text-xl">📖</span>
-            <div className="text-left">
-              <h3 className="text-xs font-bold text-pink-100">Locked Story Diary</h3>
-              <p className="text-[10px] text-zinc-400">Chapters tracing back how we met and grew closer...</p>
-            </div>
-            <div className="ml-auto bg-pink-950/60 border border-pink-500/35 text-pink-400 p-1 rounded-full">
-              <Lock size={12} />
-            </div>
-          </div>
-
-          {/* POLAROID - LIVE BIRTHDAY COUNTDOWN CLASSIC TIMER (25 November) */}
-          <div 
-            onClick={() => {
-              if (timeLeft.isBirthday) {
-                onUnlocked();
-              } else {
-                setFeedbackMsg("🎂 This custom Birthday Surprise is lock-secured! It will automatically unlock on November 25! 💝 Keep counting down!");
-                setIsError(true);
-                setTimeout(() => setIsError(false), 3000);
-              }
-            }}
-            className={`col-span-1 relative overflow-hidden bg-gradient-to-b from-slate-900/90 to-purple-950/40 text-white p-3.5 rounded-2xl shadow-[0_0_20px_rgba(236,72,153,0.2)] border border-pink-500/30 hover:border-pink-400/50 hover:scale-105 rotate-1 hover:rotate-0 transition-all duration-300 cursor-pointer flex flex-col justify-between`}
-          >
-            {/* Soft decorative background radial glow */}
-            <div className="absolute top-0 right-0 w-20 h-20 bg-pink-500/20 rounded-full blur-xl pointer-events-none" />
-
-            <div className="flex items-center justify-between mb-2 z-10 relative">
-              <span className="text-[9.5px] font-black tracking-wider uppercase opacity-90 font-sans flex items-center gap-1 text-pink-300 drop-shadow-[0_0_8px_rgba(236,72,153,0.4)]">
-                <Crown size={11} className="text-amber-300 fill-amber-300 animate-pulse" />
-                <span>Birthday 🔒</span>
-              </span>
-              <span className="text-[7px] bg-pink-950/60 border border-pink-500/40 text-pink-300 px-2 py-0.5 rounded-full font-extrabold shadow-[0_0_10px_rgba(236,72,153,0.2)]">LOCKED</span>
-            </div>
-
-            {timeLeft.isBirthday ? (
-              <div className="py-2 text-center animate-pulse z-10 relative">
-                <div className="text-2xl">🎁🎂🎈</div>
-                <p className="text-xs font-black uppercase text-amber-200 mt-1 leading-tight">HAPPY BIRTHDAY!</p>
-                <span className="text-[8px] bg-white text-pink-600 px-1.5 py-0.5 rounded font-extrabold mt-1 block shadow-[0_0_12px_rgba(236,72,153,0.4)]">
-                  Click to Open Custom Gift 🎁
-                </span>
-              </div>
-            ) : (
-              <div className="py-1 z-10 relative">
-                {/* Visual ticking layout with digital numbers - fully visible! */}
-                <div className="grid grid-cols-4 gap-1 text-center bg-slate-950/90 border border-pink-500/20 rounded-xl p-1.5 font-mono text-[9px] font-bold shadow-inner">
-                  <div className="bg-slate-900/60 p-1 rounded-md border border-pink-500/10">
-                    <div className="text-xs text-pink-300 font-extrabold">{timeLeft.days}</div>
-                    <div className="text-[5px] uppercase opacity-70 tracking-widest">Days</div>
-                  </div>
-                  <div className="bg-slate-900/60 p-1 rounded-md border border-pink-500/10">
-                    <div className="text-xs text-pink-300 font-extrabold">{timeLeft.hours}</div>
-                    <div className="text-[5px] uppercase opacity-70 tracking-widest">Hrs</div>
-                  </div>
-                  <div className="bg-slate-900/60 p-1 rounded-md border border-pink-500/10">
-                    <div className="text-xs text-pink-300 font-extrabold">{timeLeft.minutes}</div>
-                    <div className="text-[5px] uppercase opacity-70 tracking-widest">Min</div>
-                  </div>
-                  <div className="bg-slate-900/60 p-1 rounded-md border border-pink-500/10">
-                    <div className="text-xs text-amber-300 font-extrabold animate-pulse">{timeLeft.seconds}</div>
-                    <div className="text-[5px] uppercase opacity-70 tracking-widest">Sec</div>
-                  </div>
+          ) : (
+            <div className="w-full bg-slate-950/85 backdrop-blur-xl border border-pink-500/20 rounded-[40px] p-4 sm:p-6 shadow-2xl relative max-h-[75vh] overflow-y-auto scrollbar-thin">
+              <div className="text-center space-y-1 mb-4 select-none pb-3 border-b border-pink-500/15">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-500/10 border border-pink-500/20 rounded-full text-pink-300 font-extrabold text-[9px] uppercase tracking-widest animate-pulse">
+                  💖 SECRET BESTIE SANCTUARY UNLOCKED 💖
                 </div>
-                
-                <p className="text-[8.5px] text-pink-300/90 mt-2 text-center font-bold italic leading-tight drop-shadow-[0_0_6px_rgba(236,72,153,0.2)]">
-                  Unlocking Nov 25 🎂
-                </p>
+                <h2 className="font-serif text-lg font-black text-transparent bg-gradient-to-r from-pink-300 via-rose-300 to-amber-200 bg-clip-text uppercase tracking-wider">
+                  Vanshika's Journey of My Heart 👯‍♀️
+                </h2>
+                <button
+                  onClick={() => {
+                    setBestieUnlocked(false);
+                  }}
+                  className="text-[9px] text-zinc-400 hover:text-pink-400 underline font-extrabold mt-1 block mx-auto cursor-pointer"
+                >
+                  🔒 Lock Bestie Zone
+                </button>
               </div>
-            )}
-          </div>
-
-          {/* Envelope 2 */}
-          <div 
-            onClick={() => handleScrapbookItemClick("Open When Miss Me Envelope")}
-            className="bg-purple-950/20 hover:bg-purple-950/40 rounded-xl border-2 border-dashed border-purple-500/30 p-3 flex flex-col items-center justify-center text-center shadow-inner cursor-pointer transition-all hover:scale-103"
-          >
-            <div className="text-2xl mb-1 select-none animate-pulse">🌷</div>
-            <p className="text-[10px] font-extrabold text-purple-300 uppercase leading-none tracking-tight font-sans">
-              Open When<br/><span className="text-[9px] text-purple-400 font-bold block pt-0.5">Miss Me</span>
-            </p>
-          </div>
-
-          {/* Final Secret Room Trigger */}
-          <div 
-            onClick={() => handleScrapbookItemClick("Mystic Signal & Secret Room")}
-            className="col-span-2 bg-gradient-to-r from-pink-400 to-rose-400 rounded-2xl p-3.5 flex items-center gap-3 text-white shadow-md border border-white/20 hover:from-pink-500 hover:to-rose-500 cursor-pointer transition-all hover:scale-[1.01]"
-          >
-            <div className="bg-white/20 p-2 rounded-full leading-none shrink-0">
-              <span className="text-xl">🔮</span>
+              <BestieZone onTriggerConfetti={onTriggerConfetti} />
             </div>
-            <div className="text-left animate-pulse">
-              <h3 className="text-xs font-bold leading-tight">Mystic Signal & Secret Room</h3>
-              <p className="text-[9px] text-white/80 leading-normal">Connect telepathically with custom heart-vibe pulses, coupons, and more!</p>
-            </div>
-            <div className="ml-auto shrink-0">
-              <Heart size={14} fill="white" className="heart-pulsing" />
-            </div>
-          </div>
-
+          )}
         </div>
       </div>
 
@@ -618,6 +524,7 @@ export default function LandingPage({ config, onUnlocked }: LandingPageProps) {
           <p className="text-xs font-serif text-pink-600 font-semibold italic">Our Eternal Love Box ❤️</p>
         </div>
       </footer>
+
     </div>
   );
 }

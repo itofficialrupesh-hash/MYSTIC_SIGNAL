@@ -16,6 +16,8 @@ import SecretRoom from './components/SecretRoom';
 import LovelyLogo from './components/LovelyLogo';
 import NeonTextHeart from './components/NeonTextHeart';
 import SecretApologyZone from './components/SecretApologyZone';
+import BestieZone from './components/BestieZone';
+import BestiePasscodeLock from './components/BestiePasscodeLock';
 
 // Types and Defaults
 import { LoveConfig, MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter } from './types';
@@ -25,7 +27,7 @@ import {
 } from './defaultData';
 
 interface RisingHeart {
-  id: number;
+  id: string;
   x: number;
   drift: string;
   rot: string;
@@ -47,8 +49,10 @@ export default function App() {
 
   // UI States
   const [showAdmin, setShowAdmin] = useState(false);
-  const [activeTab, setActiveTab] = useState<'safekeep' | 'gallery' | 'secret-room'>('safekeep');
+  const [activeTab, setActiveTab] = useState<'safekeep' | 'gallery' | 'secret-room' | 'bestie-zone'>('safekeep');
+  const [homeSubView, setHomeSubView] = useState<'letters' | 'bestie'>('letters');
   const [heartsList, setHeartsList] = useState<RisingHeart[]>([]);
+  const [isBestieZoneUnlocked, setIsBestieZoneUnlocked] = useState<boolean>(false);
 
   // Load custom values from localStorage if available
   useEffect(() => {
@@ -101,8 +105,8 @@ export default function App() {
         const hydrated = { ...DEFAULT_CONFIG, ...parsed };
         
         // Automatic sweet music track migration to stable fail-safe SoundHelix/YouTube soundtrack
-        if (!hydrated.bgMusicUrl || hydrated.bgMusicUrl.includes("mixkit") || hydrated.bgMusicUrl.includes("codeskulptor") || hydrated.bgMusicUrl.includes("google") || hydrated.bgMusicUrl.includes("SoundHelix") || !hydrated.bgMusicUrl.includes("za6peqgbPUgB7mj4")) {
-          hydrated.bgMusicUrl = "https://youtu.be/2_i3Iw0rZPo?si=za6peqgbPUgB7mj4";
+        if (!hydrated.bgMusicUrl || hydrated.bgMusicUrl.includes("mixkit") || hydrated.bgMusicUrl.includes("codeskulptor") || hydrated.bgMusicUrl.includes("google") || hydrated.bgMusicUrl.includes("SoundHelix") || !hydrated.bgMusicUrl.includes("8PTOkwze0Vw")) {
+          hydrated.bgMusicUrl = "https://youtu.be/8PTOkwze0Vw?si=XAQUn87oDaRhG2An";
           try {
             localStorage.setItem('love_config', JSON.stringify(hydrated));
           } catch (storageErr) {
@@ -187,7 +191,7 @@ export default function App() {
       const drift = `${Math.random() * 320 - 160}px`;
       const rot = `${Math.random() * 360}deg`;
       return {
-        id: Date.now() + index,
+        id: `heart-${Date.now()}-${index}-${Math.random()}`,
         x: Math.random() * 92 + 4,
         drift,
         rot,
@@ -250,6 +254,7 @@ export default function App() {
         <LandingPage 
           config={config} 
           onUnlocked={handleMasterUnlocked}
+          onTriggerConfetti={triggerHeartsShower}
         />
       ) : (
         // AUTHENTICATED SECRET LAND
@@ -316,12 +321,13 @@ export default function App() {
           {/* Tab switches for the 3 main wings */}
           <div 
             id="dashboard-tabs"
-            className="flex items-center justify-center p-1.5 bg-pink-50/40 border border-pink-100/40 rounded-2xl max-w-md mx-auto"
+            className="flex flex-wrap items-center justify-center p-1.5 bg-pink-50/40 border border-pink-100/40 rounded-2xl max-w-xl mx-auto gap-1"
           >
             {[
               { id: 'safekeep', label: '📬 Letters & Story', icon: <Mail size={13} /> },
               { id: 'gallery', label: '📸 Polaroid Gallery', icon: <ImageIcon size={13} /> },
-              { id: 'secret-room', label: '❤️ Favorite Room', icon: <Heart size={13} /> }
+              { id: 'secret-room', label: '❤️ Favorite Room', icon: <Heart size={13} /> },
+              { id: 'bestie-zone', label: '👯 Vanshika Bestie', icon: <Heart size={13} fill="currentColor" /> }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -346,21 +352,106 @@ export default function App() {
             {/* WING A: LETTERS, TIMELINES & ENVELOPES */}
             {activeTab === 'safekeep' && (
               <div className="space-y-6">
-                <div className="text-center py-4 select-none">
-                  <h3 className="font-serif text-2xl font-black text-pink-100 drop-shadow-[0_0_15px_rgba(236,72,153,0.3)]">My Secret Envelopes</h3>
-                  <p className="text-xs text-gray-400 mt-1 max-w-md mx-auto">
-                    Click each capsule, enter our special password date if locked, and unlock the letters I wrote for you.
-                  </p>
+                {/* Home Sub-Section Navigation / Toggles */}
+                <div id="home-subview-hub" className="flex items-center justify-center p-1 bg-pink-50/10 border border-pink-500/10 rounded-2xl max-w-md mx-auto gap-1 shadow-inner select-none">
+                  <button
+                    onClick={() => setHomeSubView('letters')}
+                    className={`flex-1 py-2 px-4 rounded-xl text-xs font-extrabold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      homeSubView === 'letters'
+                        ? 'bg-gradient-to-r from-pink-500 to-rose-400 text-white shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+                        : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <span>📬 Secret Letters</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setHomeSubView('bestie');
+                      triggerHeartsShower();
+                    }}
+                    className={`flex-1 py-2 px-4 rounded-xl text-xs font-extrabold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      homeSubView === 'bestie'
+                        ? 'bg-gradient-to-r from-pink-500 to-rose-450 text-white shadow-[0_0_12px_rgba(244,63,94,0.3)]'
+                        : 'text-pink-300 hover:text-pink-200 bg-pink-500/5 hover:bg-pink-500/10'
+                    }`}
+                  >
+                    <span>❤️ Journey of My Heart</span>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-pink-400 animate-ping" />
+                  </button>
                 </div>
-                
-                <OpenWhenLetters 
-                  config={config} 
-                  story={story} 
-                  memories={memories} 
-                  letters={letters}
-                  onTriggerConfetti={triggerHeartsShower}
-                  onUnlockPasscodeChecked={() => true}
-                />
+
+                {homeSubView === 'letters' ? (
+                  <div className="space-y-8 animate-fade-in">
+                    {/* BREATHTAKING HIGHLIGHT BANNER: JOURNEY OF MY HEART */}
+                    <div 
+                      id="bestie-launch-banner"
+                      className="p-[1.5px] rounded-3xl bg-gradient-to-r from-pink-500 via-[#ff4fa3] to-purple-600 shadow-[0_0_20px_rgba(255,79,163,0.25)] relative overflow-hidden select-none hover:scale-[1.01] transition-all duration-300"
+                    >
+                      {/* Decorative backdrop graphics */}
+                      <div className="absolute inset-0 bg-radial-gradient from-purple-500/20 via-transparent to-transparent opacity-60 pointer-events-none" />
+                      <div className="bg-[#08031d] rounded-[22.5px] p-6 text-center space-y-4">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-500/20 border border-pink-500/40 rounded-full text-pink-300 font-extrabold text-[9px] uppercase tracking-widest animate-bounce">
+                          <span>✨ SURPRISE IN HOME SECTION ✨</span>
+                        </div>
+                        <h3 className="font-serif text-xl md:text-2xl font-black text-white bg-gradient-to-r from-pink-200 via-rose-300 to-amber-200 bg-clip-text text-transparent uppercase tracking-wider">
+                          Journey Of My Heart ❤️
+                        </h3>
+                        <p className="text-xs text-zinc-300 max-w-lg mx-auto leading-relaxed">
+                          A beautiful 7-stage interactive journey crafted specifically for my best friend Vanshika to celebrate our unbreakable bond, sweet milestones, memories, and stars.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setHomeSubView('bestie');
+                            triggerHeartsShower();
+                          }}
+                          className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#ff4fa3] to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white text-xs font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(255,79,163,0.4)] cursor-pointer decoration-none inline-flex items-center gap-2"
+                        >
+                          <span>Explore Journey 🚀🌸</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="text-center py-2 select-none">
+                      <h3 className="font-serif text-2xl font-black text-pink-100 drop-shadow-[0_0_15px_rgba(236,72,153,0.3)]">My Secret Envelopes</h3>
+                      <p className="text-xs text-gray-400 mt-1 max-w-md mx-auto">
+                        Click each capsule, enter our special password date if locked, and unlock the letters I wrote for you.
+                      </p>
+                    </div>
+                    
+                    <OpenWhenLetters 
+                      config={config} 
+                      story={story} 
+                      memories={memories} 
+                      letters={letters}
+                      onTriggerConfetti={triggerHeartsShower}
+                      onUnlockPasscodeChecked={() => true}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-4 animate-fade-in max-w-4xl mx-auto">
+                    <div className="flex justify-start select-none">
+                      <button
+                        onClick={() => {
+                          setHomeSubView('letters');
+                          triggerHeartsShower();
+                        }}
+                        className="px-4 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 font-bold text-xs cursor-pointer transition-all border border-white/5 flex items-center gap-1.5"
+                      >
+                        <span>← Back to Secret Letters</span>
+                      </button>
+                    </div>
+                    {!isBestieZoneUnlocked ? (
+                      <BestiePasscodeLock 
+                        onUnlockSuccess={() => setIsBestieZoneUnlocked(true)}
+                        onTriggerConfetti={triggerHeartsShower}
+                      />
+                    ) : (
+                      <BestieZone 
+                        onTriggerConfetti={triggerHeartsShower}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -387,6 +478,22 @@ export default function App() {
                   photos={photos} 
                   onTriggerConfetti={triggerHeartsShower}
                 />
+              </div>
+            )}
+
+            {/* WING D: VANSHIKA BESTIE SURPRISE ZONE */}
+            {activeTab === 'bestie-zone' && (
+              <div className="animate-fade-in max-w-4xl mx-auto">
+                {!isBestieZoneUnlocked ? (
+                  <BestiePasscodeLock 
+                    onUnlockSuccess={() => setIsBestieZoneUnlocked(true)}
+                    onTriggerConfetti={triggerHeartsShower}
+                  />
+                ) : (
+                  <BestieZone 
+                    onTriggerConfetti={triggerHeartsShower}
+                  />
+                )}
               </div>
             )}
           </main>

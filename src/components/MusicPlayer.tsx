@@ -11,16 +11,68 @@ declare global {
   }
 }
 
+function getYouTubeId(url: string | undefined): string {
+  if (!url) return "8PTOkwze0Vw";
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|si=)([^#\&\?]*).*/;
+  // Try extracting standard Youtube watch ID, shortlink, parameter or si
+  const match = url.match(regExp);
+  // Also try simple query param watch?v= or slash parsing
+  if (match && match[2] && match[2].length === 11) {
+    return match[2];
+  }
+  // Alternate simpler check for short links and direct watch links
+  try {
+    if (url.includes("youtu.be/")) {
+      const parts = url.split("youtu.be/");
+      if (parts[1]) {
+        const id = parts[1].split(/[?#]/)[0];
+        if (id.length === 11) return id;
+      }
+    }
+    if (url.includes("v=")) {
+      const parts = url.split("v=");
+      if (parts[1]) {
+        const id = parts[1].substring(0, 11);
+        if (id.length === 11) return id;
+      }
+    }
+  } catch (e) {}
+  return "8PTOkwze0Vw";
+}
+
 export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
   const playerRef = useRef<any>(null);
   const initializedRef = useRef<boolean>(false);
   const userInteractedRef = useRef<boolean>(false);
-  const [isMinimized, setIsMinimized] = useState<boolean>(true);
+  const userVoluntarilyMutedRef = useRef<boolean>(false);
+  const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(true);
+  const isMutedRef = useRef<boolean>(true);
   const [playbackStatus, setPlaybackStatus] = useState<string>("Initializing...");
 
-  // Hardcoded target YouTube ID: '2_i3Iw0rZPo'
-  const activeYtId = "2_i3Iw0rZPo";
+  const activeYtId = getYouTubeId(musicUrl);
+
+  const unmuteAndPlay = () => {
+    if (userVoluntarilyMutedRef.current) return;
+    const player = playerRef.current;
+    if (player && typeof player.unMute === 'function') {
+      try {
+        player.unMute();
+        player.setVolume(85);
+        player.playVideo();
+        setIsMuted(false);
+        isMutedRef.current = false;
+        setPlaybackStatus("Playing Live 🔊");
+      } catch (err) {
+        console.warn("YouTube play failed:", err);
+      }
+    }
+  };
+
+  // Keep ref up-to-date with state
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -60,29 +112,56 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
           events: {
             onReady: (event: any) => {
               playerRef.current = event.target;
-              event.target.setVolume(80); // Set perfect romantic volume
+              event.target.setVolume(85); // Set perfect romantic volume
               
-              try {
-                event.target.playVideo();
-                if (userInteractedRef.current) {
-                  unmuteAndPlay();
-                } else {
-                  setPlaybackStatus("Autoplay Ready ✨");
+              const alreadyInteracted = userInteractedRef.current && !userVoluntarilyMutedRef.current;
+              if (alreadyInteracted) {
+                try {
+                  event.target.unMute();
+                  event.target.playVideo();
+                  setIsMuted(false);
+                  isMutedRef.current = false;
+                  setPlaybackStatus("Playing Live 🔊");
+                } catch (e) {
+                  console.warn("Unmuted play error onReady:", e);
                 }
-              } catch (e) {
-                setPlaybackStatus("Ready (Tap to play) 💖");
+              } else {
+                try {
+                  // ALWAYS START MUTED TO ALLOW AUTOPLAY BY BROWSER WITHOUT BLOCKS
+                  event.target.mute();
+                  event.target.playVideo();
+                  setIsMuted(true);
+                  isMutedRef.current = true;
+                  setPlaybackStatus("Autoplay Ready ✨");
+                } catch (e) {
+                  console.warn("Muted play error onReady:", e);
+                  try {
+                    event.target.mute();
+                    event.target.playVideo();
+                  } catch (e2) {}
+                }
               }
             },
             onStateChange: (event: any) => {
               const state = event.data;
               if (state === window.YT.PlayerState.PLAYING) {
                 const player = event.target;
-                if (!isMuted) {
+                if (userInteractedRef.current && !userVoluntarilyMutedRef.current) {
                   try {
                     player.unMute();
-                    player.setVolume(80);
+                    player.setVolume(85);
+                    setIsMuted(false);
+                    isMutedRef.current = false;
+                    setPlaybackStatus("Playing Live 🔊");
                   } catch (e) {}
-                  setPlaybackStatus("Playing Live 🔊");
+                } else if (!isMutedRef.current && !userVoluntarilyMutedRef.current) {
+                  try {
+                    player.unMute();
+                    player.setVolume(85);
+                    setPlaybackStatus("Playing Live 🔊");
+                  } catch (e) {}
+                } else {
+                  setPlaybackStatus("Autoplay Ready ✨");
                 }
               } else if (state === window.YT.PlayerState.PAUSED) {
                 setPlaybackStatus("Paused");
@@ -108,51 +187,66 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
       };
     }
 
-    function unmuteAndPlay() {
-      const player = playerRef.current;
-      if (player && typeof player.unMute === 'function') {
-        try {
-          player.unMute();
-          player.setVolume(85);
-          player.playVideo();
-          setIsMuted(false);
-          setPlaybackStatus("Playing Live 🔊");
-        } catch (err) {
-          console.warn("YouTube play failed:", err);
-        }
-      }
-    }
-
     // Expose global unmuting function to be triggered on password unlock & screen touches
     (window as any).__unmuteThemeMusic = () => {
       userInteractedRef.current = true;
       unmuteAndPlay();
     };
 
-    const removeListeners = () => {
-      window.removeEventListener('click', handleInteraction);
-      window.removeEventListener('touchstart', handleInteraction);
-      window.removeEventListener('mousedown', handleInteraction);
-      window.removeEventListener('keydown', handleInteraction);
-      window.removeEventListener('scroll', handleInteraction);
-    };
-
-    // Dynamic unmuting triggers on any user touch/tap
+    // Dynamic unmuting triggers on any user touch/tap on the screen
     const handleInteraction = () => {
-      if (userInteractedRef.current) return;
       userInteractedRef.current = true;
-      removeListeners();
       unmuteAndPlay();
     };
 
-    window.addEventListener('click', handleInteraction, { passive: true });
-    window.addEventListener('touchstart', handleInteraction, { passive: true });
-    window.addEventListener('mousedown', handleInteraction, { passive: true });
-    window.addEventListener('keydown', handleInteraction, { passive: true });
-    window.addEventListener('scroll', handleInteraction, { passive: true });
+    const eventOpts = { capture: true, passive: true };
+
+    window.addEventListener('click', handleInteraction, eventOpts);
+    window.addEventListener('touchstart', handleInteraction, eventOpts);
+    window.addEventListener('mousedown', handleInteraction, eventOpts);
+    window.addEventListener('keydown', handleInteraction, eventOpts);
+    window.addEventListener('scroll', handleInteraction, eventOpts);
+    window.addEventListener('pointerdown', handleInteraction, eventOpts);
+
+    document.addEventListener('click', handleInteraction, eventOpts);
+    document.addEventListener('touchstart', handleInteraction, eventOpts);
+    document.addEventListener('mousedown', handleInteraction, eventOpts);
+    document.addEventListener('keydown', handleInteraction, eventOpts);
+    document.addEventListener('scroll', handleInteraction, eventOpts);
+    document.addEventListener('pointerdown', handleInteraction, eventOpts);
+
+    if (document.body) {
+      document.body.addEventListener('click', handleInteraction, eventOpts);
+      document.body.addEventListener('touchstart', handleInteraction, eventOpts);
+      document.body.addEventListener('mousedown', handleInteraction, eventOpts);
+      document.body.addEventListener('keydown', handleInteraction, eventOpts);
+      document.body.addEventListener('scroll', handleInteraction, eventOpts);
+      document.body.addEventListener('pointerdown', handleInteraction, eventOpts);
+    }
 
     return () => {
-      removeListeners();
+      window.removeEventListener('click', handleInteraction, eventOpts);
+      window.removeEventListener('touchstart', handleInteraction, eventOpts);
+      window.removeEventListener('mousedown', handleInteraction, eventOpts);
+      window.removeEventListener('keydown', handleInteraction, eventOpts);
+      window.removeEventListener('scroll', handleInteraction, eventOpts);
+      window.removeEventListener('pointerdown', handleInteraction, eventOpts);
+
+      document.removeEventListener('click', handleInteraction, eventOpts);
+      document.removeEventListener('touchstart', handleInteraction, eventOpts);
+      document.removeEventListener('mousedown', handleInteraction, eventOpts);
+      document.removeEventListener('keydown', handleInteraction, eventOpts);
+      document.removeEventListener('scroll', handleInteraction, eventOpts);
+      document.removeEventListener('pointerdown', handleInteraction, eventOpts);
+
+      if (document.body) {
+        document.body.removeEventListener('click', handleInteraction, eventOpts);
+        document.body.removeEventListener('touchstart', handleInteraction, eventOpts);
+        document.body.removeEventListener('mousedown', handleInteraction, eventOpts);
+        document.body.removeEventListener('keydown', handleInteraction, eventOpts);
+        document.body.removeEventListener('scroll', handleInteraction, eventOpts);
+        document.body.removeEventListener('pointerdown', handleInteraction, eventOpts);
+      }
       try {
         delete (window as any).__unmuteThemeMusic;
       } catch (err) {}
@@ -178,10 +272,12 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
           player.playVideo();
           setIsMuted(false);
           setPlaybackStatus("Playing Live 🔊");
+          userVoluntarilyMutedRef.current = false;
         } else {
           player.mute();
           setIsMuted(true);
           setPlaybackStatus("Muted");
+          userVoluntarilyMutedRef.current = true;
         }
       } catch (e) {
         console.warn(e);
