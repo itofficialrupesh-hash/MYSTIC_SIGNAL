@@ -1036,15 +1036,15 @@ export default function BestieZone({ onTriggerConfetti }: BestieZoneProps) {
                   >
                     <div className="aspect-[3/4] w-full rounded-lg overflow-hidden border border-pink-500/10">
                       <img 
-                        src={sorryBoyPhoto} 
-                        alt="Vanshika Pouting" 
-                        className="w-full h-full object-cover grayscale contrast-110 hover:grayscale-0 transition-all duration-500"
+                        src={vanshikaHappyPhoto} 
+                        alt="Vanshika Gorgeous smiling with Jhumka" 
+                        className="w-full h-full object-cover hover:scale-105 transition-all duration-500"
                         onClick={() => onTriggerConfetti()}
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <p className="font-mono text-[9px] text-pink-300 mt-2.5 font-bold italic text-center select-none leading-normal">
-                      "Sach mai nazar hoti hai! 🧿 Pout Queen 🥺❤️"
+                    <p className="font-mono text-[9px] text-pink-200 mt-2.5 font-bold italic text-center select-none leading-normal">
+                      "My Absolute Gorgeous Queen 👑✨"
                     </p>
                   </motion.div>
 
@@ -1058,15 +1058,15 @@ export default function BestieZone({ onTriggerConfetti }: BestieZoneProps) {
                   >
                     <div className="aspect-[3/4] w-full rounded-lg overflow-hidden border border-pink-500/10">
                       <img 
-                        src={vanshikaHappyPhoto} 
-                        alt="Vanshika Gorgeous smiling with Jhumka" 
-                        className="w-full h-full object-cover hover:scale-105 transition-all duration-500"
+                        src={sorryBoyPhoto} 
+                        alt="Vanshika Pouting" 
+                        className="w-full h-full object-cover grayscale contrast-110 hover:grayscale-0 transition-all duration-500"
                         onClick={() => onTriggerConfetti()}
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <p className="font-mono text-[9px] text-pink-200 mt-2.5 font-bold italic text-center select-none leading-normal">
-                      "My Absolute Gorgeous Queen 👑✨"
+                    <p className="font-mono text-[9px] text-pink-300 mt-2.5 font-bold italic text-center select-none leading-normal">
+                      "Sach mai nazar hoti hai! 🧿 Pout Queen 🥺❤️"
                     </p>
                   </motion.div>
                 </div>
