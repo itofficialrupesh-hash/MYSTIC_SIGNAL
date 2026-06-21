@@ -12,7 +12,7 @@ declare global {
 }
 
 function getYouTubeId(url: string | undefined): string {
-  if (!url) return "8PTOkwze0Vw";
+  if (!url) return "BxsAhjPkw2A";
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|si=)([^#\&\?]*).*/;
   // Try extracting standard Youtube watch ID, shortlink, parameter or si
   const match = url.match(regExp);
@@ -37,7 +37,7 @@ function getYouTubeId(url: string | undefined): string {
       }
     }
   } catch (e) {}
-  return "8PTOkwze0Vw";
+  return "BxsAhjPkw2A";
 }
 
 export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {

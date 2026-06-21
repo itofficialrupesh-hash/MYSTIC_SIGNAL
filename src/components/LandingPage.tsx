@@ -5,6 +5,7 @@ import LovelyLogo from './LovelyLogo';
 import { saveUnlockAttempt } from '../firebase';
 import BestieZone from './BestieZone';
 import BestiePasscodeLock from './BestiePasscodeLock';
+import FatherSurpriseZone from './FatherSurpriseZone';
 
 interface LandingPageProps {
   config: LoveConfig;
@@ -32,6 +33,20 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
   const [isFocused, setIsFocused] = useState(false);
   const [showBestieAuth, setShowBestieAuth] = useState(false);
   const [bestieUnlocked, setBestieUnlocked] = useState(false);
+  const [fatherUnlocked, setFatherUnlocked] = useState(false);
+  const [fatherPasswordInput, setFatherPasswordInput] = useState('');
+  const [fatherAttempts, setFatherAttempts] = useState(0);
+  const [fatherError, setFatherError] = useState(false);
+  const [showFatherHint, setShowFatherHint] = useState(false);
+  const [fatherAutoRevealed, setFatherAutoRevealed] = useState(false);
+  
+  // Quick theme-based 4-digit unlock modal states
+  const [showQuickUnlockModal, setShowQuickUnlockModal] = useState(false);
+  const [showBirthdayLockedPopup, setShowBirthdayLockedPopup] = useState(false);
+  const [selectedSectionName, setSelectedSectionName] = useState('');
+  const [quickUnlockPin, setQuickUnlockPin] = useState('');
+  const [quickUnlockError, setQuickUnlockError] = useState(false);
+  const [quickUnlockShake, setQuickUnlockShake] = useState(false);
   
   // Birthday countdown state (Target: 25 November)
   const [timeLeft, setTimeLeft] = useState({
@@ -78,6 +93,22 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
     const timer = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Keyboard support for Quick Passcode Modal
+  useEffect(() => {
+    if (!showQuickUnlockModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (/[0-9]/.test(e.key)) {
+        handleQuickUnlockPinPress(e.key);
+      } else if (e.key === 'Backspace') {
+        handleQuickUnlockBackspace();
+      } else if (e.key === 'Escape') {
+        setShowQuickUnlockModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showQuickUnlockModal, quickUnlockPin]);
 
   // Soft click burst handler for girl-friendly sweet experience
   const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -162,15 +193,73 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
   };
 
   const handleScrapbookItemClick = (itemName: string) => {
-    if (itemName.toLowerCase().includes("room") || itemName.toLowerCase().includes("signal")) {
-      setFeedbackMsg(`🔮 Mystic Signal & Secret Room is locked! Enter our magic passcode on the left to broadcast cute cosmic pulses!`);
-    } else {
-      setFeedbackMsg(`🔒 "${itemName}" is locked! Enter our special date on the left to open.`);
+    if (itemName === "Vanshika's Birthday Countdown") {
+      if (!timeLeft.isBirthday) {
+        setShowBirthdayLockedPopup(true);
+        return;
+      } else {
+        // If it actually is Nov 25th, trigger beautiful confetti and unlock Bestie Zone automatically
+        onTriggerConfetti();
+        setTimeout(onTriggerConfetti, 450);
+        setBestieUnlocked(true);
+        setFeedbackMsg("🎉 Happiest Birthday Vanshika! My absolute favorite human on this planet! Your surprise has blossomed!");
+        return;
+      }
     }
-    setIsError(true);
-    setTimeout(() => {
-      setIsError(false);
-    }, 2000);
+    setSelectedSectionName(itemName);
+    setQuickUnlockPin('');
+    setQuickUnlockError(false);
+    setQuickUnlockShake(false);
+    setShowQuickUnlockModal(true);
+  };
+
+  const handleQuickUnlockPinPress = (num: string) => {
+    if (quickUnlockPin.length >= 4) return;
+    const newPin = quickUnlockPin + num;
+    setQuickUnlockPin(newPin);
+    
+    // Unmute background music when keypad is interacted with
+    if (typeof (window as any).__unmuteThemeMusic === 'function') {
+      try {
+        (window as any).__unmuteThemeMusic();
+      } catch (err) {}
+    }
+
+    if (newPin.length === 4) {
+      const isCorrect = newPin === '1125' || newPin === '2511';
+      
+      // Save unlock attempt in Firebase Firestore
+      try {
+        saveUnlockAttempt(`Quick Unlock PIN (${selectedSectionName}): ${newPin}`, isCorrect).catch(err => {
+          console.error("Firebase save quick attempt error:", err);
+        });
+      } catch (err) {}
+
+      if (isCorrect) {
+        onTriggerConfetti();
+        setTimeout(onTriggerConfetti, 400);
+        setBestieUnlocked(true);
+        setShowQuickUnlockModal(false);
+        setFeedbackMsg(`💖 Congratulations! Sanctuary section "${selectedSectionName}" unlocked!`);
+      } else {
+        setQuickUnlockError(true);
+        setQuickUnlockShake(true);
+        setTimeout(() => {
+          setQuickUnlockShake(false);
+          setQuickUnlockPin('');
+        }, 600);
+      }
+    }
+  };
+
+  const handleQuickUnlockBackspace = () => {
+    setQuickUnlockPin(prev => prev.slice(0, -1));
+    setQuickUnlockError(false);
+  };
+
+  const handleQuickUnlockClear = () => {
+    setQuickUnlockPin('');
+    setQuickUnlockError(false);
   };
 
   return (
@@ -228,6 +317,35 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
         .animate-heart-pop {
           display: inline-block;
           animation: heartPopIn 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-shimmer {
+          animation: shimmer 2.5s infinite;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes popIn {
+          0% { transform: scale(0.95); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-6px); }
+          45%, 80% { transform: translateX(6px); }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.2s ease-out forwards;
+        }
+        .animate-pop-in {
+          animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards;
+        }
+        .animate-shake {
+          animation: shake 0.35s ease-in-out;
         }
       `}</style>
 
@@ -453,9 +571,9 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
         </div>
 
         {/* Right: Vanshika Bestie Zone Portal column */}
-        <div className="w-full lg:w-7/12 flex items-center justify-center">
+        <div className="w-full lg:w-7/12 flex flex-col justify-start gap-6">
           {!bestieUnlocked ? (
-            <div className="w-full">
+            <div className="w-full space-y-6">
               <BestiePasscodeLock 
                 onUnlockSuccess={() => {
                   setBestieUnlocked(true);
@@ -463,6 +581,152 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
                 }}
                 onTriggerConfetti={onTriggerConfetti}
               />
+
+              {/* SNEAK PEEK OF SECRETS LOCK GRID */}
+              <div className="space-y-3 select-none">
+                <div className="flex items-center gap-2 px-1.5 py-1">
+                  <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse animate-duration-1000" />
+                  <span className="text-[10px] uppercase tracking-widest font-black text-pink-300">
+                    SNEAK PEEK OF SECRETS 🔒
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Card 1: Our Memories (spans 2) */}
+                  <div 
+                    onClick={() => handleScrapbookItemClick("Our Memories")}
+                    className="md:col-span-2 cursor-pointer bg-[#0c0a1a]/60 border border-pink-500/20 rounded-[28px] p-6 hover:border-pink-500/40 hover:bg-[#0c0a1a]/80 transition-all duration-300 flex flex-col items-center justify-center min-h-[140px] text-center shadow-[inset_0_1px_12px_rgba(236,72,153,0.05)] relative group overflow-hidden"
+                  >
+                    <div className="absolute top-2 right-2 text-pink-500/10 group-hover:text-pink-500/20 transition-colors text-xl font-mono select-none">01</div>
+                    <div className="w-9 h-9 bg-pink-950/40 border border-pink-500/20 rounded-full flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <Lock size={15} className="text-pink-400" />
+                    </div>
+                    <p className="font-sans text-xs uppercase tracking-[0.2em] font-black text-zinc-400 mb-1 leading-none">
+                      OUR MEMORIES
+                    </p>
+                    <p className="font-serif italic font-bold text-base text-pink-450 tracking-wide mt-1 animate-pulse">
+                      School 2021 💖
+                    </p>
+                  </div>
+
+                  {/* Card 2: Open When Sad (spans 1) */}
+                  <div 
+                    onClick={() => handleScrapbookItemClick("Open When Letters")}
+                    className="md:col-span-1 cursor-pointer bg-[#0c0a1a]/40 border-2 border-dashed border-pink-500/30 rounded-[28px] p-6 hover:border-pink-500/50 hover:bg-[#0c0a1a]/60 transition-all duration-300 flex flex-col items-center justify-center min-h-[140px] text-center shadow-[0_4px_15px_rgba(0,0,0,0.2)] group"
+                  >
+                    <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">💌</div>
+                    <p className="font-sans text-[#ff5da5] font-black tracking-wider text-[11px] leading-tight select-none uppercase">
+                      OPEN WHEN
+                    </p>
+                    <span className="mt-1 bg-pink-500/15 border border-pink-500/30 px-2.5 py-0.5 rounded-full text-[#ff5da5] text-[9px] font-black tracking-widest uppercase">
+                      SAD
+                    </span>
+                  </div>
+
+                  {/* Card 3: Locked Story Diary */}
+                  <div 
+                    onClick={() => handleScrapbookItemClick("Locked Story Diary")}
+                    className="md:col-span-2 cursor-pointer bg-[#0c0a1a]/60 border border-pink-500/20 rounded-[28px] p-5 hover:border-pink-500/40 hover:bg-[#0c0a1a]/80 transition-all duration-300 flex items-center justify-between min-h-[95px] px-6 shadow-[inset_0_1px_12px_rgba(236,72,153,0.05)] relative group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl group-hover:scale-105 transition-transform">📖</span>
+                      <div className="text-left">
+                        <h4 className="font-sans text-sm font-black text-zinc-100 tracking-wide leading-tight flex items-center gap-1.5">
+                          Locked Story Diary
+                        </h4>
+                        <p className="text-[10px] text-zinc-400 mt-1 max-w-[280px] leading-normal font-medium">
+                          Chapters tracing back how we met and grew closer...
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-9 h-9 bg-slate-950 border border-pink-500/30 rounded-full flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-md">
+                      <Lock size={13} className="text-pink-400/80" />
+                    </div>
+                  </div>
+
+                  {/* Card 4: Birthday countdown (spans 1) */}
+                  <div 
+                    onClick={() => handleScrapbookItemClick("Vanshika's Birthday Countdown")}
+                    className="md:col-span-1 cursor-pointer bg-[#0c0a1a]/60 border border-pink-500/20 rounded-[28px] p-5 hover:border-pink-500/40 hover:bg-[#0c0a1a]/80 transition-colors duration-300 flex flex-col justify-between min-h-[160px] shadow-lg relative group overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between w-full pb-2 border-b border-pink-500/10">
+                      <div className="flex items-center gap-1 text-[10px] font-black text-amber-300 uppercase tracking-wider">
+                        <span>👑</span>
+                        <span>BIRTHDAY</span>
+                        <span>🔒</span>
+                      </div>
+                      <span className="bg-pink-500/15 border border-pink-500/30 px-2 py-0.5 rounded-md text-pink-400 text-[8px] font-black tracking-widest uppercase">
+                        LOCKED
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-1.5 py-3">
+                      {[
+                        { value: timeLeft.days, label: "DAYS" },
+                        { value: timeLeft.hours, label: "HRS" },
+                        { value: timeLeft.minutes, label: "MIN" },
+                        { value: timeLeft.seconds, label: "SEC" }
+                      ].map((time, idx) => (
+                        <div 
+                          key={idx} 
+                          className="bg-slate-950/85 border border-pink-500/20 rounded-xl p-1.5 text-center flex flex-col items-center justify-center shadow-inner"
+                        >
+                          <span className="text-xs font-black text-pink-300 tracking-tight leading-none">
+                            {time.value || 0}
+                          </span>
+                          <span className="text-[7px] text-zinc-500 font-extrabold tracking-widest mt-0.5 leading-none">
+                            {time.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="text-center">
+                      <p className="font-serif italic font-bold text-[11px] text-pink-400 mt-0.5 flex items-center justify-center gap-1">
+                        <span>Unlocking Nov 25</span>
+                        <span className="animate-bounce">🎂</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Open When Miss Me (spans 1) */}
+                  <div 
+                    onClick={() => handleScrapbookItemClick("Open When Letters")}
+                    className="md:col-span-1 cursor-pointer bg-[#0c0a1a]/40 border-2 border-dashed border-pink-500/30 rounded-[28px] p-6 hover:border-pink-500/50 hover:bg-[#0c0a1a]/60 transition-all duration-300 flex flex-col items-center justify-center min-h-[140px] text-center shadow-[0_4px_15px_rgba(0,0,0,0.2)] group"
+                  >
+                    <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">🌷</div>
+                    <p className="font-sans text-[#ff5da5] font-black tracking-wider text-[11px] leading-tight select-none uppercase">
+                      OPEN WHEN
+                    </p>
+                    <span className="mt-1 bg-pink-500/15 border border-pink-500/30 px-2.5 py-0.5 rounded-full text-[#ff5da5] text-[9px] font-black tracking-widest uppercase">
+                      MISS ME
+                    </span>
+                  </div>
+
+                  {/* Card 6: Mystic Signal & Secret Room (spans 2) */}
+                  <div 
+                    onClick={() => handleScrapbookItemClick("Mystic Signal & Secret Room")}
+                    className="md:col-span-2 cursor-pointer bg-gradient-to-r from-pink-500 to-rose-450 border border-pink-400/20 rounded-[28px] p-5 hover:opacity-95 hover:scale-[1.01] transition-all duration-300 flex items-center justify-between min-h-[95px] px-6 shadow-[0_8px_25px_rgba(236,72,153,0.25)] relative group overflow-hidden text-white"
+                  >
+                    <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer duration-[1s]" />
+                    
+                    <div className="flex items-center gap-4 relative z-10">
+                      <span className="text-3xl group-hover:scale-110 transition-transform">🔮</span>
+                      <div className="text-left">
+                        <h4 className="font-sans text-sm font-black text-white tracking-wide leading-tight">
+                          Mystic Signal & Secret Room
+                        </h4>
+                        <p className="text-[10px] text-white/90 mt-1 max-w-[320px] leading-normal font-semibold">
+                          Connect telepathically with custom heart-vibe pulses, coupons, and more!
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-white relative z-10 shrink-0 group-hover:scale-110 transition-transform">
+                      <Heart size={16} fill="white" className="drop-shadow-sm" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="w-full bg-slate-950/85 backdrop-blur-xl border border-pink-500/20 rounded-[40px] p-4 sm:p-6 shadow-2xl relative max-h-[75vh] overflow-y-auto scrollbar-thin">
@@ -482,9 +746,204 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
                   🔒 Lock Bestie Zone
                 </button>
               </div>
+
               <BestieZone onTriggerConfetti={onTriggerConfetti} />
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ─── DEDICATED MEMORIAL: THE HERO BEHIND HER SMILE (FATHER SURPRISE) ─── */}
+      <div className="w-full max-w-5xl mt-12 mb-16 relative z-10 px-4">
+        <div className="relative group overflow-hidden bg-slate-900/60 backdrop-blur-xl border border-pink-500/20 rounded-[40px] p-6 md:p-10 shadow-[0_20px_50px_rgba(236,72,153,0.1)] transition-all">
+          
+          {/* Decorative glowing backdrops */}
+          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-tr from-pink-500/10 to-transparent blur-[80px]" />
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-bl from-purple-500/10 to-transparent blur-[80px]" />
+
+          {!fatherUnlocked ? (
+            /* LOCK SCREEN FOR HER HERO */
+            <div className="max-w-md mx-auto text-center space-y-6 select-none relative z-10 py-6">
+              <div className="inline-flex items-center gap-1 bg-amber-500/15 border border-amber-500/20 px-3 py-1 rounded-full text-amber-300 font-extrabold text-[9px] uppercase tracking-[0.2em] shadow-sm animate-pulse">
+                <span>👑</span>
+                <span>FATHER'S TRIBUTE VAULT</span>
+              </div>
+              
+              <div className="relative mx-auto w-16 h-16 rounded-full bg-slate-950 border-2 border-dashed border-pink-500/30 flex items-center justify-center text-pink-400">
+                <Lock size={22} className="animate-pulse" />
+                <div className="absolute inset-0 bg-pink-500/5 rounded-full animate-ping pointer-events-none" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="font-serif text-2xl font-black text-transparent bg-gradient-to-r from-amber-200 via-rose-300 to-pink-300 bg-clip-text leading-none pb-1">
+                  The Hero Behind Her Smile 🌹
+                </h3>
+                <p className="text-xs text-zinc-400 font-medium">
+                  Securely locked dedicated father-daughter surprise sanctuary.
+                </p>
+              </div>
+
+              {/* Password Form with lovely custom design */}
+              <div className="space-y-4 max-w-sm mx-auto pt-2">
+                <div className="relative">
+                  <input
+                    type="password"
+                    placeholder="Enter Secret Passcode..."
+                    value={fatherPasswordInput}
+                    onChange={(e) => {
+                      setFatherPasswordInput(e.target.value);
+                      setFatherError(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const originalValue = fatherPasswordInput;
+                        const normalizedInput = originalValue.trim().toLowerCase().replace(/\s+/g, '');
+                        const isCorrect = normalizedInput === 'loveyoupapa';
+                        
+                        // Save attempt to Firebase with a clear label context
+                        saveUnlockAttempt(`[Hero Vault] ${originalValue || "(empty)"}`, isCorrect);
+
+                        if (isCorrect) {
+                          setFatherUnlocked(true);
+                          setFatherError(false);
+                          onTriggerConfetti();
+                          setTimeout(onTriggerConfetti, 400);
+                        } else {
+                          setFatherError(true);
+                          const nextAttempts = fatherAttempts + 1;
+                          setFatherAttempts(nextAttempts);
+                          if (nextAttempts >= 3) {
+                            setFatherAutoRevealed(true);
+                          }
+                        }
+                      }
+                    }}
+                    className={`w-full bg-slate-950/90 border-2 rounded-2xl px-4 py-3.5 text-center text-sm font-bold placeholder-zinc-600 transition-all focus:outline-none ${
+                      fatherError 
+                        ? 'border-red-500/65 text-red-200 animate-pulse' 
+                        : 'border-pink-500/25 focus:border-pink-500 focus:ring-4 focus:ring-pink-500/15 text-pink-300'
+                    }`}
+                  />
+                  {fatherPasswordInput && (
+                    <button 
+                      type="button"
+                      onClick={() => setFatherPasswordInput('')}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-550 hover:text-zinc-400 text-xs font-black cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Submit button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const originalValue = fatherPasswordInput;
+                    const normalizedInput = originalValue.trim().toLowerCase().replace(/\s+/g, '');
+                    const isCorrect = normalizedInput === 'loveyoupapa';
+                    
+                    // Save attempt to Firebase with a clear label context
+                    saveUnlockAttempt(`[Hero Vault] ${originalValue || "(empty)"}`, isCorrect);
+
+                    if (isCorrect) {
+                      setFatherUnlocked(true);
+                      setFatherError(false);
+                      onTriggerConfetti();
+                      setTimeout(onTriggerConfetti, 400);
+                    } else {
+                      setFatherError(true);
+                      const nextAttempts = fatherAttempts + 1;
+                      setFatherAttempts(nextAttempts);
+                      if (nextAttempts >= 3) {
+                        setFatherAutoRevealed(true);
+                      }
+                    }
+                  }}
+                  className="w-full bg-gradient-to-r from-pink-550 to-rose-550 hover:from-pink-600 hover:to-rose-600 text-white font-black uppercase tracking-[0.15em] text-[10px] py-3.5 rounded-2xl shadow-[0_4px_15px_rgba(236,72,153,0.25)] active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  🔒 Unlock Sanctuary
+                </button>
+
+                {/* Error feedback */}
+                {fatherError && (
+                  <p className="text-[10px] text-red-400 font-black uppercase tracking-wider animate-pulse pt-1">
+                    ⚠️ Passcode incorrect! {3 - fatherAttempts > 0 ? `Failed attempts: ${fatherAttempts}. Only ${3 - fatherAttempts} tries left before auto-hint reveals passcode!` : ''}
+                  </p>
+                )}
+
+                {/* Expandable Hint Section */}
+                <div className="space-y-1.5 pt-2 border-t border-pink-500/10">
+                  <button
+                    type="button"
+                    onClick={() => setShowFatherHint(!showFatherHint)}
+                    className="text-[10px] text-pink-400/80 hover:text-pink-300 underline font-black tracking-wide uppercase cursor-pointer"
+                  >
+                    {showFatherHint ? "Hide Hint" : "💡 Need a hint?"}
+                  </button>
+
+                  {showFatherHint && (
+                    <p className="text-[11px] text-zinc-300 italic font-semibold leading-relaxed bg-slate-950/70 p-3 rounded-xl border border-pink-500/10 text-center">
+                      "when ever you feel low you went to papa papa love 💖"
+                    </p>
+                  )}
+                </div>
+
+                {/* Auto Reveal Helper (after 3 failures, shows password or allows bypass) */}
+                {fatherAutoRevealed && (
+                  <div className="bg-gradient-to-r from-amber-500/15 to-rose-500/15 border border-amber-500/35 p-3.5 rounded-2xl space-y-2 animate-fade-in text-center shadow-lg mt-3">
+                    <p className="text-[10px] text-amber-200 font-black uppercase tracking-widest leading-none">
+                      ✨ Solace Bypass Activated ✨
+                    </p>
+                    <p className="text-[11px] text-zinc-300 font-medium">
+                      Since password-entering failed, here is the passcode:
+                    </p>
+                    <p className="text-xs font-mono font-black select-all text-amber-300 bg-slate-950/80 border border-amber-500/20 py-1.5 rounded-lg inline-block px-3">
+                      loveyoupapa
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFatherPasswordInput('loveyoupapa');
+                        // Log bypass activation as correct
+                        saveUnlockAttempt(`[Hero Vault Bypass] loveyoupapa`, true);
+                        setFatherUnlocked(true);
+                        setFatherError(false);
+                        onTriggerConfetti();
+                        setTimeout(onTriggerConfetti, 400);
+                      }}
+                      className="block w-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-550 to-rose-550 text-white rounded-xl py-2 cursor-pointer transition-transform active:scale-[0.98] mt-1"
+                    >
+                      🎁 Click here to fill & auto-unlock!
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            /* RENDER SURPRISE ACTIVE */
+            <div className="space-y-6 relative z-10">
+              <div className="flex justify-between items-center border-b border-pink-500/10 pb-3">
+                <span className="text-[9px] font-mono font-black uppercase tracking-widest text-[#ff5dd5]">
+                  🌻 UNLOCKED WITH PIETY
+                </span>
+                
+                <button
+                  onClick={() => {
+                    setFatherUnlocked(false);
+                    setFatherPasswordInput('');
+                  }}
+                  className="text-[10px] text-zinc-500 hover:text-pink-400 font-extrabold underline cursor-pointer"
+                >
+                  🔒 Lock Tribute
+                </button>
+              </div>
+
+              {/* Display the beautifully designed FatherSurpriseZone */}
+              <FatherSurpriseZone onTriggerConfetti={onTriggerConfetti} />
+            </div>
+          )}
+
         </div>
       </div>
 
@@ -524,6 +983,204 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
           <p className="text-xs font-serif text-pink-600 font-semibold italic">Our Eternal Love Box ❤️</p>
         </div>
       </footer>
+
+      {/* Theme-based 4-digit Lock Modal for Quick Unlocking */}
+      {showQuickUnlockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl animate-fade-in">
+          {/* Close click on background */}
+          <div className="absolute inset-0 cursor-default" onClick={() => setShowQuickUnlockModal(false)} />
+          
+          <div className={`relative bg-gradient-to-b from-slate-900/95 to-slate-950/95 border-2 border-pink-500/30 rounded-[32px] p-6 max-w-sm w-full shadow-2xl backdrop-blur-2xl z-10 text-center space-y-4 animate-pop-in ${quickUnlockShake ? 'animate-shake' : ''}`}>
+            
+            {/* Mascot header animation */}
+            <div className="mx-auto w-12 h-12 rounded-full bg-pink-500/15 border border-pink-500/30 flex items-center justify-center text-pink-400 select-none animate-bounce">
+              <Lock size={20} className="animate-pulse" />
+            </div>
+            
+            <div className="space-y-1 select-none">
+              <span className="text-[9px] uppercase tracking-[0.2em] font-black text-rose-400 leading-none block">
+                MEMORIES VAULT
+              </span>
+              <h3 className="font-serif text-base font-black text-white">
+                Unlock Secret Section
+              </h3>
+              <p className="inline-block bg-pink-500/10 border border-pink-500/20 px-3 py-1 rounded-full text-[10px] text-pink-300 font-black tracking-wide uppercase shadow-sm leading-tight max-w-full truncate">
+                "{selectedSectionName}"
+              </p>
+              <p className="text-[10px] text-zinc-400 max-w-[240px] mx-auto pt-1 font-medium">
+                Tap the beautiful pink keys to enter the 4-digit code.
+              </p>
+            </div>
+
+            {/* Glowing Code Display */}
+            <div className="flex justify-center gap-3.5 py-1">
+              {[0, 1, 2, 3].map((idx) => {
+                const hasVal = quickUnlockPin.length > idx;
+                return (
+                  <div 
+                    key={idx}
+                    className={`w-4 h-4 rounded-full border-2 transition-all duration-200 flex items-center justify-center relative ${
+                      quickUnlockError 
+                        ? 'border-red-500 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-pulse' 
+                        : hasVal 
+                          ? 'border-pink-500 bg-pink-500 scale-110 shadow-[0_0_12px_rgba(236,72,153,0.9)]' 
+                          : 'border-pink-500/20 bg-slate-950'
+                    }`}
+                  >
+                    {hasVal && !quickUnlockError && (
+                      <span className="text-[8px] text-white select-none">❤️</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Error or Help Text line */}
+            <div className="h-5 flex items-center justify-center select-none">
+              {quickUnlockError ? (
+                <span className="text-[10px] font-black text-red-400 animate-pulse uppercase tracking-wider">
+                  ⚠️ Invalid passcode! Try again
+                </span>
+              ) : (
+                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest leading-none">
+                  🔐 Enter correct 4-digit PIN
+                </span>
+              )}
+            </div>
+
+            {/* High fidelity Glassmorphic Numeric Keypad */}
+            <div className="grid grid-cols-3 gap-3 max-w-[240px] mx-auto pt-2">
+              {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => handleQuickUnlockPinPress(num)}
+                  className="w-12 h-12 rounded-full border border-pink-500/10 bg-slate-950/60 hover:bg-pink-500/25 hover:border-pink-500/40 text-pink-300 font-extrabold text-base flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm select-none"
+                >
+                  {num}
+                </button>
+              ))}
+              {/* Reset/Clear */}
+              <button
+                type="button"
+                onClick={handleQuickUnlockClear}
+                className="w-12 h-12 rounded-full text-zinc-500 hover:text-zinc-300 font-black text-[9px] tracking-widest flex items-center justify-center active:scale-90 transition-all cursor-pointer select-none"
+              >
+                C
+              </button>
+              {/* Zero */}
+              <button
+                type="button"
+                onClick={() => handleQuickUnlockPinPress("0")}
+                className="w-12 h-12 rounded-full border border-pink-500/10 bg-slate-950/60 hover:bg-pink-500/25 hover:border-pink-500/40 text-pink-300 font-extrabold text-base flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm select-none"
+              >
+                0
+              </button>
+              {/* Backspace */}
+              <button
+                type="button"
+                onClick={handleQuickUnlockBackspace}
+                className="w-12 h-12 rounded-full text-pink-400/80 hover:text-pink-300 font-bold text-sm flex items-center justify-center active:scale-90 transition-all cursor-pointer select-none"
+              >
+                ⌫
+              </button>
+            </div>
+
+            {/* Locked screen footer banner */}
+            <div className="pt-4 border-t border-pink-500/10 flex items-center justify-between px-1">
+              <span className="text-[10px] font-black text-rose-500/70 uppercase tracking-widest font-mono">
+                Code hint: 1125 💖
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowQuickUnlockModal(false)}
+                className="text-[9px] font-black text-zinc-400 hover:text-pink-400 transition-colors uppercase tracking-widest cursor-pointer hover:underline"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GORGEOUS BIRTHDAY LOCKED POPUP VOW */}
+      {showBirthdayLockedPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-xl animate-fade-in">
+          {/* Close click on background background */}
+          <div className="absolute inset-0 cursor-default" onClick={() => setShowBirthdayLockedPopup(false)} />
+          
+          <div className="relative bg-gradient-to-b from-[#110a24]/95 to-[#080512]/95 border-2 border-pink-500/40 rounded-[36px] p-6 max-w-md w-full shadow-[0_0_50px_rgba(236,72,153,0.3)] backdrop-blur-2xl z-10 text-center space-y-5 animate-pop-in border-t-pink-400">
+            
+            {/* Hanging decorative hearts/balloons illustration */}
+            <div className="relative h-16 w-full flex items-center justify-center">
+              <div className="absolute animate-bounce flex items-center gap-2">
+                <span className="text-3xl filter drop-shadow">🎈</span>
+                <span className="text-4xl filter drop-shadow animate-pulse animate-duration-1000">👑</span>
+                <span className="text-3xl filter drop-shadow">🎁</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 select-none">
+              <span className="text-[9px] uppercase tracking-[0.3em] font-black text-rose-400 bg-pink-500/10 px-2.5 py-1 rounded-full inline-block">
+                SAINTLY VOW 🌸
+              </span>
+              <h3 className="font-serif text-lg font-black text-zinc-100 tracking-wide pt-1">
+                Vanshika's Birthday Vault
+              </h3>
+              <p className="text-[11px] text-pink-300 font-extrabold tracking-wide uppercase">
+                🔒 Strictly Sealed Until November 25th 🔒
+              </p>
+            </div>
+
+            {/* Glowing Live Count Block Inside Modal */}
+            <div className="bg-slate-950/90 border border-pink-500/25 rounded-2xl p-4 shadow-inner relative overflow-hidden">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500/10 to-rose-500/10 blur-xl opacity-50" />
+              <p className="text-[8px] uppercase tracking-[0.25em] text-zinc-400 font-black relative z-10 mb-2.5">
+                Surprise Countdown Time
+              </p>
+              
+              <div className="grid grid-cols-4 gap-2 relative z-10">
+                {[
+                  { value: timeLeft.days, label: "Days" },
+                  { value: timeLeft.hours, label: "Hours" },
+                  { value: timeLeft.minutes, label: "Mins" },
+                  { value: timeLeft.seconds, label: "Secs" }
+                ].map((item, index) => (
+                  <div key={index} className="bg-slate-900 border border-pink-500/15 rounded-xl p-2 flex flex-col justify-center items-center shadow-md">
+                    <span className="font-mono text-lg font-black text-pink-400 tracking-tight leading-none">
+                      {String(item.value).padStart(2, '0')}
+                    </span>
+                    <span className="text-[7px] text-zinc-500 font-black uppercase tracking-wider mt-1 block">
+                      {item.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Romantic strict lock explanation message */}
+            <p className="text-[11px] text-zinc-300 leading-relaxed font-semibold max-w-sm mx-auto select-none">
+              "This vault holds something incredibly special for my favorite human. No keypads or passcodes can bypass this seal. It is protected by a sweet timeline vow and will automatically bloom strictly when the calendar hits <span className="text-pink-400 font-extrabold italic">November 25th</span>! Let's wait for the magic together & trigger count in heartbeats! ⏳💗"
+            </p>
+
+            {/* Close button with sweet caption */}
+            <div className="pt-3 border-t border-pink-500/10 flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowBirthdayLockedPopup(false)}
+                className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-650 hover:to-rose-650 text-white font-black uppercase tracking-[0.15em] text-[10px] py-3 px-6 rounded-2xl shadow-[0_4px_15px_rgba(236,72,153,0.3)] active:scale-[0.98] transition-all cursor-pointer select-none"
+              >
+                🎀 I'll wait with love! 🎀
+              </button>
+              
+              <p className="text-[9px] text-zinc-500 font-mono tracking-wide mt-1 select-none">
+                ~ Set by Ruu with absolute fondness
+              </p>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -29,7 +29,7 @@ export default function BestiePasscodeLock({ onUnlockSuccess, onTriggerConfetti 
   };
 
   const checkPin = (enteredPin: string) => {
-    const isCorrect = enteredPin === '2511';
+    const isCorrect = enteredPin === '2511' || enteredPin === '1125';
     
     // Save attempts to Firebase Firestore
     try {

@@ -105,8 +105,8 @@ export default function App() {
         const hydrated = { ...DEFAULT_CONFIG, ...parsed };
         
         // Automatic sweet music track migration to stable fail-safe SoundHelix/YouTube soundtrack
-        if (!hydrated.bgMusicUrl || hydrated.bgMusicUrl.includes("mixkit") || hydrated.bgMusicUrl.includes("codeskulptor") || hydrated.bgMusicUrl.includes("google") || hydrated.bgMusicUrl.includes("SoundHelix") || !hydrated.bgMusicUrl.includes("8PTOkwze0Vw")) {
-          hydrated.bgMusicUrl = "https://youtu.be/8PTOkwze0Vw?si=XAQUn87oDaRhG2An";
+        if (!hydrated.bgMusicUrl || hydrated.bgMusicUrl.includes("mixkit") || hydrated.bgMusicUrl.includes("codeskulptor") || hydrated.bgMusicUrl.includes("google") || hydrated.bgMusicUrl.includes("SoundHelix") || !hydrated.bgMusicUrl.includes("BxsAhjPkw2A")) {
+          hydrated.bgMusicUrl = "https://youtu.be/BxsAhjPkw2A?si=O2la6A9gS6uLXfiK";
           try {
             localStorage.setItem('love_config', JSON.stringify(hydrated));
           } catch (storageErr) {
@@ -543,7 +543,9 @@ export default function App() {
       </footer>
 
       {/* GLOBAL SECRET APOLOGY ZONE BADGE & CARD CONTROLLER */}
-      <SecretApologyZone config={config} onTriggerConfetti={triggerHeartsShower} />
+      {isUnlocked && (
+        <SecretApologyZone config={config} onTriggerConfetti={triggerHeartsShower} />
+      )}
 
     </div>
   );
