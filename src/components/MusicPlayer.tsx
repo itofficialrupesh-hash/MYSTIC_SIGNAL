@@ -12,7 +12,7 @@ declare global {
 }
 
 function getYouTubeId(url: string | undefined): string {
-  if (!url) return "BxsAhjPkw2A";
+  if (!url) return "LlwHphMhUOo";
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|si=)([^#\&\?]*).*/;
   // Try extracting standard Youtube watch ID, shortlink, parameter or si
   const match = url.match(regExp);
@@ -37,7 +37,7 @@ function getYouTubeId(url: string | undefined): string {
       }
     }
   } catch (e) {}
-  return "BxsAhjPkw2A";
+  return "LlwHphMhUOo";
 }
 
 export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
@@ -55,11 +55,17 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
   const unmuteAndPlay = () => {
     if (userVoluntarilyMutedRef.current) return;
     const player = playerRef.current;
-    if (player && typeof player.unMute === 'function') {
+    if (player) {
       try {
-        player.unMute();
-        player.setVolume(85);
-        player.playVideo();
+        if (typeof player.playVideo === 'function') {
+          player.playVideo();
+        }
+        if (typeof player.unMute === 'function') {
+          player.unMute();
+        }
+        if (typeof player.setVolume === 'function') {
+          player.setVolume(85);
+        }
         setIsMuted(false);
         isMutedRef.current = false;
         setPlaybackStatus("Playing Live 🔊");
@@ -92,7 +98,7 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
       if (!window.YT || !window.YT.Player) return;
       
       try {
-        new window.YT.Player('bg-music-iframe-api', {
+        playerRef.current = new window.YT.Player('bg-music-iframe-api', {
           height: '100%',
           width: '100%',
           videoId: activeYtId,
@@ -117,8 +123,8 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
               const alreadyInteracted = userInteractedRef.current && !userVoluntarilyMutedRef.current;
               if (alreadyInteracted) {
                 try {
-                  event.target.unMute();
                   event.target.playVideo();
+                  event.target.unMute();
                   setIsMuted(false);
                   isMutedRef.current = false;
                   setPlaybackStatus("Playing Live 🔊");
@@ -199,54 +205,72 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
       unmuteAndPlay();
     };
 
-    const eventOpts = { capture: true, passive: true };
+    const events = ['click', 'touchend', 'mouseup', 'pointerup', 'keydown'];
 
-    window.addEventListener('click', handleInteraction, eventOpts);
-    window.addEventListener('touchstart', handleInteraction, eventOpts);
-    window.addEventListener('mousedown', handleInteraction, eventOpts);
-    window.addEventListener('keydown', handleInteraction, eventOpts);
-    window.addEventListener('scroll', handleInteraction, eventOpts);
-    window.addEventListener('pointerdown', handleInteraction, eventOpts);
+    events.forEach(evt => {
+      window.addEventListener(evt, handleInteraction, { capture: true });
+      document.addEventListener(evt, handleInteraction, { capture: true });
+      if (document.body) {
+        document.body.addEventListener(evt, handleInteraction, { capture: true });
+      }
+    });
 
-    document.addEventListener('click', handleInteraction, eventOpts);
-    document.addEventListener('touchstart', handleInteraction, eventOpts);
-    document.addEventListener('mousedown', handleInteraction, eventOpts);
-    document.addEventListener('keydown', handleInteraction, eventOpts);
-    document.addEventListener('scroll', handleInteraction, eventOpts);
-    document.addEventListener('pointerdown', handleInteraction, eventOpts);
+    // Background sync interval to force unmute once the user has interacted at least once
+    const syncInterval = setInterval(() => {
+      const player = playerRef.current;
+      if (player && typeof player.isMuted === 'function') {
+        try {
+          const physicallyMuted = player.isMuted();
+          
+          if (userInteractedRef.current && !userVoluntarilyMutedRef.current) {
+            // Force play if it is paused or unstarted, and force unmute if muted
+            let playerState = -1;
+            try {
+              playerState = player.getPlayerState();
+            } catch (e) {}
 
-    if (document.body) {
-      document.body.addEventListener('click', handleInteraction, eventOpts);
-      document.body.addEventListener('touchstart', handleInteraction, eventOpts);
-      document.body.addEventListener('mousedown', handleInteraction, eventOpts);
-      document.body.addEventListener('keydown', handleInteraction, eventOpts);
-      document.body.addEventListener('scroll', handleInteraction, eventOpts);
-      document.body.addEventListener('pointerdown', handleInteraction, eventOpts);
-    }
+            if (playerState === 2 || playerState === -1 || playerState === 5) {
+              if (typeof player.playVideo === 'function') {
+                player.playVideo();
+              }
+            }
+
+            if (physicallyMuted) {
+              if (typeof player.unMute === 'function') {
+                player.unMute();
+              }
+              if (typeof player.setVolume === 'function') {
+                player.setVolume(85);
+              }
+              setIsMuted(false);
+              isMutedRef.current = false;
+              setPlaybackStatus("Playing Live 🔊");
+            } else if (isMutedRef.current) {
+              setIsMuted(false);
+              isMutedRef.current = false;
+              setPlaybackStatus("Playing Live 🔊");
+            }
+          } else {
+            // Keep state in sync with physical player state
+            if (physicallyMuted !== isMutedRef.current) {
+              setIsMuted(physicallyMuted);
+              isMutedRef.current = physicallyMuted;
+              setPlaybackStatus(physicallyMuted ? "Muted" : "Playing Live 🔊");
+            }
+          }
+        } catch (e) {}
+      }
+    }, 400);
 
     return () => {
-      window.removeEventListener('click', handleInteraction, eventOpts);
-      window.removeEventListener('touchstart', handleInteraction, eventOpts);
-      window.removeEventListener('mousedown', handleInteraction, eventOpts);
-      window.removeEventListener('keydown', handleInteraction, eventOpts);
-      window.removeEventListener('scroll', handleInteraction, eventOpts);
-      window.removeEventListener('pointerdown', handleInteraction, eventOpts);
-
-      document.removeEventListener('click', handleInteraction, eventOpts);
-      document.removeEventListener('touchstart', handleInteraction, eventOpts);
-      document.removeEventListener('mousedown', handleInteraction, eventOpts);
-      document.removeEventListener('keydown', handleInteraction, eventOpts);
-      document.removeEventListener('scroll', handleInteraction, eventOpts);
-      document.removeEventListener('pointerdown', handleInteraction, eventOpts);
-
-      if (document.body) {
-        document.body.removeEventListener('click', handleInteraction, eventOpts);
-        document.body.removeEventListener('touchstart', handleInteraction, eventOpts);
-        document.body.removeEventListener('mousedown', handleInteraction, eventOpts);
-        document.body.removeEventListener('keydown', handleInteraction, eventOpts);
-        document.body.removeEventListener('scroll', handleInteraction, eventOpts);
-        document.body.removeEventListener('pointerdown', handleInteraction, eventOpts);
-      }
+      clearInterval(syncInterval);
+      events.forEach(evt => {
+        window.removeEventListener(evt, handleInteraction, { capture: true });
+        document.removeEventListener(evt, handleInteraction, { capture: true });
+        if (document.body) {
+          document.body.removeEventListener(evt, handleInteraction, { capture: true });
+        }
+      });
       try {
         delete (window as any).__unmuteThemeMusic;
       } catch (err) {}
