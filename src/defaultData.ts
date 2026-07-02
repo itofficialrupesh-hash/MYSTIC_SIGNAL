@@ -6,7 +6,7 @@ export const DEFAULT_CONFIG: LoveConfig = {
   coupleNameTwo: "Mystic Signal",
   specialDate: "1125", // Default simple passcode
   specialDateHint: "WHENEVER YOU FEEL LOW MY GIRL YOU WENT TO PAPA AND MUMMA AND FRIENDS AND MAYBE RUU.... COMBINATION OF DATES.",
-  bgMusicUrl: "https://www.youtube.com/watch?v=LlwHphMhUOo", // Fail-safe sweet romantic instrumental loop
+  bgMusicUrl: "https://youtu.be/BxsAhjPkw2A?si=O2la6A9gS6uLXfiK", // Fail-safe sweet romantic instrumental loop
   promises: [
     "I promise to always listen to you, even when we don't agree, and to build a space where you feel safe and loved.",
     "I promise to hold your hand through every high and low of life, being your biggest cheerleader and strongest supporter.",
