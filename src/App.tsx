@@ -18,6 +18,8 @@ import NeonTextHeart from './components/NeonTextHeart';
 import SecretApologyZone from './components/SecretApologyZone';
 import BestieZone from './components/BestieZone';
 import BestiePasscodeLock from './components/BestiePasscodeLock';
+import PeriodHub from './components/PeriodHub';
+import PeriodHubLock from './components/PeriodHubLock';
 
 // Types and Defaults
 import { LoveConfig, MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter } from './types';
@@ -49,10 +51,17 @@ export default function App() {
 
   // UI States
   const [showAdmin, setShowAdmin] = useState(false);
-  const [activeTab, setActiveTab] = useState<'safekeep' | 'gallery' | 'secret-room' | 'bestie-zone'>('safekeep');
+  const [activeTab, setActiveTab] = useState<'safekeep' | 'gallery' | 'secret-room' | 'bestie-zone' | 'period-hub'>('safekeep');
   const [homeSubView, setHomeSubView] = useState<'letters' | 'bestie'>('letters');
   const [heartsList, setHeartsList] = useState<RisingHeart[]>([]);
   const [isBestieZoneUnlocked, setIsBestieZoneUnlocked] = useState<boolean>(false);
+  const [isPeriodHubUnlocked, setIsPeriodHubUnlocked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('is_period_hub_unlocked') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
 
   // Load custom values from localStorage if available
   useEffect(() => {
@@ -321,11 +330,12 @@ export default function App() {
           {/* Tab switches for the 3 main wings */}
           <div 
             id="dashboard-tabs"
-            className="flex flex-wrap items-center justify-center p-1.5 bg-pink-50/40 border border-pink-100/40 rounded-2xl max-w-xl mx-auto gap-1"
+            className="flex flex-wrap items-center justify-center p-1.5 bg-pink-50/40 border border-pink-100/40 rounded-2xl max-w-2xl mx-auto gap-1"
           >
             {[
               { id: 'safekeep', label: '📬 Letters & Story', icon: <Mail size={13} /> },
               { id: 'gallery', label: '📸 Polaroid Gallery', icon: <ImageIcon size={13} /> },
+              { id: 'period-hub', label: '🌸 Period Hub', icon: <span className="text-xs">🌸</span> },
               { id: 'secret-room', label: '❤️ Favorite Room', icon: <Heart size={13} /> },
               { id: 'bestie-zone', label: '👯 Vanshika Bestie', icon: <Heart size={13} fill="currentColor" /> }
             ].map((tab) => (
@@ -494,6 +504,57 @@ export default function App() {
                     onTriggerConfetti={triggerHeartsShower}
                   />
                 )}
+              </div>
+            )}
+
+            {/* WING E: PERIOD HUB COZY SANCTUARY POPUP OVERLAY */}
+            {activeTab === 'period-hub' && (
+              <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/95 backdrop-blur-lg flex flex-col justify-start items-center p-4 md:p-8 animate-fade-in text-white select-none">
+                {/* Floating close button at top right */}
+                <button 
+                  onClick={() => {
+                    setActiveTab('safekeep');
+                    triggerHeartsShower();
+                  }}
+                  className="fixed top-4 right-4 md:top-6 md:right-6 bg-slate-900/90 hover:bg-pink-500 hover:text-white text-zinc-300 rounded-full p-2.5 cursor-pointer transition-all z-[60] border border-pink-500/30 hover:scale-105 shadow-2xl flex items-center justify-center"
+                  title="Return to Dashboard"
+                >
+                  <span className="text-xs font-serif font-black mr-1 uppercase tracking-wider">Dashboard 🌸</span>
+                </button>
+
+                <div className="w-full max-w-5xl mx-auto pt-12 pb-8 relative z-10">
+                  {!isPeriodHubUnlocked ? (
+                    <div className="max-w-md mx-auto pt-4 md:pt-12">
+                      <PeriodHubLock 
+                        onUnlockSuccess={() => {
+                          setIsPeriodHubUnlocked(true);
+                          try {
+                            localStorage.setItem('is_period_hub_unlocked', 'true');
+                          } catch (e) {}
+                        }}
+                        onTriggerConfetti={triggerHeartsShower}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full space-y-6">
+                      <div className="flex flex-col items-center text-center space-y-2 mb-2 select-none">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-500/15 border border-pink-500/30 rounded-full text-pink-300 font-extrabold text-[10px] uppercase tracking-widest animate-pulse">
+                          🌸 Sweet Cozy Sanctuary Active 🌸
+                        </div>
+                        <h2 className="font-serif text-2xl md:text-3xl font-black text-transparent bg-gradient-to-r from-pink-300 via-rose-300 to-amber-200 bg-clip-text uppercase tracking-wider">
+                          🌸 Period Hub Sanctuary
+                        </h2>
+                        <p className="text-xs text-zinc-400 font-medium max-w-md">
+                          Welcome to your sweet comfort world, my princess. Take some tea, chocolates, cozy sounds, and rest.
+                        </p>
+                      </div>
+
+                      <div className="bg-[#110a1f]/80 backdrop-blur-xl border border-pink-500/20 rounded-[32px] p-2 md:p-4 shadow-2xl relative overflow-hidden text-zinc-800 dark:text-white">
+                        <PeriodHub onTriggerConfetti={triggerHeartsShower} />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </main>

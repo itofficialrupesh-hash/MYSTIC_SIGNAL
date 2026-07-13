@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Lock, Unlock, HelpCircle, Heart, Star, Compass, Gift, Calendar, Clock, Crown } from 'lucide-react';
+import { Lock, Unlock, HelpCircle, Heart, Star, Compass, Gift, Calendar, Clock, Crown, X } from 'lucide-react';
 import { LoveConfig } from '../types';
 import LovelyLogo from './LovelyLogo';
 import { saveUnlockAttempt } from '../firebase';
 import BestieZone from './BestieZone';
 import BestiePasscodeLock from './BestiePasscodeLock';
 import FatherSurpriseZone from './FatherSurpriseZone';
+import PeriodHub from './PeriodHub';
+import PeriodHubLock from './PeriodHubLock';
 
 interface LandingPageProps {
   config: LoveConfig;
@@ -39,6 +41,16 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
   const [fatherError, setFatherError] = useState(false);
   const [showFatherHint, setShowFatherHint] = useState(false);
   const [fatherAutoRevealed, setFatherAutoRevealed] = useState(false);
+  
+  // Period Hub states
+  const [showPeriodHubModal, setShowPeriodHubModal] = useState(false);
+  const [isPeriodHubUnlocked, setIsPeriodHubUnlocked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('is_period_hub_unlocked') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
   
   // Quick theme-based 4-digit unlock modal states
   const [showQuickUnlockModal, setShowQuickUnlockModal] = useState(false);
@@ -725,6 +737,34 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
                       <Heart size={16} fill="white" className="drop-shadow-sm" />
                     </div>
                   </div>
+
+                  {/* Card 7: Cozy Period Hub Comfort Zone (spans 3 - Full Width!) */}
+                  <div 
+                    onClick={() => setShowPeriodHubModal(true)}
+                    className="md:col-span-3 cursor-pointer bg-gradient-to-r from-pink-950/40 via-purple-950/40 to-[#120a1c] border border-pink-500/25 rounded-[28px] p-5 hover:border-pink-500/50 hover:bg-[#0c0a1a]/80 transition-all duration-300 flex flex-col md:flex-row items-center justify-between min-h-[105px] gap-4 px-6 md:px-8 shadow-[0_4px_25px_rgba(244,63,94,0.1)] relative group overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-radial-gradient from-pink-500/5 via-transparent to-transparent opacity-60 pointer-events-none" />
+                    {/* Floating icons in background */}
+                    <div className="absolute top-2 right-12 text-pink-500/10 group-hover:text-pink-500/20 text-xs font-mono select-none">🌸 comfort sanctuary</div>
+                    <div className="flex items-center gap-4 relative z-10">
+                      <span className="text-4xl group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 select-none">🌸</span>
+                      <div className="text-left">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[9px] font-black text-pink-400 bg-pink-500/10 px-2.5 py-0.5 rounded-full border border-pink-500/20 uppercase tracking-widest">Cozy Comfort Zone</span>
+                          <span className="text-[9px] font-bold text-rose-300/80 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20 tracking-wider">Passcode: Ruutanish</span>
+                        </div>
+                        <h4 className="font-serif text-sm md:text-base font-black text-transparent bg-gradient-to-r from-pink-300 via-rose-200 to-amber-200 bg-clip-text tracking-wide mt-1.5 leading-tight">
+                          🌸 Cozy Period Hub Sanctuary 🔒
+                        </h4>
+                        <p className="text-[10px] text-zinc-300 mt-1 max-w-[480px] leading-relaxed font-semibold">
+                          Dedicated relief with cozy virtual hot water bags, sweet chocolate treats, warm tea, relaxing background music layers, and chocolate counters. Click to unlock!
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-10 h-10 bg-slate-950 border border-pink-500/30 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-md relative z-10">
+                      <Lock size={14} className="text-pink-400" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1178,6 +1218,54 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
               </p>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ─── COZY PERIOD HUB POPUP OVERLAY SANCTUARY ─── */}
+      {showPeriodHubModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/95 backdrop-blur-lg flex flex-col justify-start items-center p-4 md:p-8 animate-fade-in">
+          {/* Floating close button at the very top right */}
+          <button 
+            onClick={() => setShowPeriodHubModal(false)}
+            className="fixed top-4 right-4 md:top-6 md:right-6 bg-slate-900/90 hover:bg-pink-500 hover:text-white text-zinc-300 rounded-full p-2.5 cursor-pointer transition-all z-[60] border border-pink-500/30 hover:scale-105 shadow-2xl flex items-center justify-center"
+            title="Close Sanctuary"
+          >
+            <X size={20} />
+          </button>
+
+          <div className="w-full max-w-5xl mx-auto pt-12 pb-8 relative z-10">
+            {!isPeriodHubUnlocked ? (
+              <div className="max-w-md mx-auto pt-4 md:pt-12">
+                <PeriodHubLock 
+                  onUnlockSuccess={() => {
+                    setIsPeriodHubUnlocked(true);
+                    try {
+                      localStorage.setItem('is_period_hub_unlocked', 'true');
+                    } catch (e) {}
+                  }}
+                  onTriggerConfetti={onTriggerConfetti}
+                />
+              </div>
+            ) : (
+              <div className="w-full space-y-6">
+                <div className="flex flex-col items-center text-center space-y-2 mb-2 select-none">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-500/15 border border-pink-500/30 rounded-full text-pink-300 font-extrabold text-[10px] uppercase tracking-widest animate-pulse">
+                    🌸 Sweet Cozy Sanctuary Active 🌸
+                  </div>
+                  <h2 className="font-serif text-2xl md:text-3xl font-black text-transparent bg-gradient-to-r from-pink-300 via-rose-300 to-amber-200 bg-clip-text uppercase tracking-wider">
+                    🌸 Period Hub Sanctuary
+                  </h2>
+                  <p className="text-xs text-zinc-400 font-medium max-w-md">
+                    Welcome to your sweet comfort world, my princess. Take some tea, chocolates, cozy sounds, and rest.
+                  </p>
+                </div>
+
+                <div className="bg-[#110a1f]/80 backdrop-blur-xl border border-pink-500/20 rounded-[32px] p-2 md:p-4 shadow-2xl relative overflow-hidden">
+                  <PeriodHub onTriggerConfetti={onTriggerConfetti} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
