@@ -28,6 +28,15 @@ export default function FloatingParticles() {
 
     let animationFrameId: number;
     let particles: Particle[] = [];
+    let isTabVisible = true;
+
+    // Detect if client prefers reduced motion or is mobile
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent));
+    
+    // Performance budgeting
+    const maxParticles = prefersReducedMotion ? 0 : (isMobile ? 12 : 35);
+    const enableShadows = !isMobile && !prefersReducedMotion;
 
     // Resize handling
     const resizeCanvas = () => {
@@ -61,28 +70,30 @@ export default function FloatingParticles() {
 
     const createParticle = (initBottom = false): Particle => {
       const type = types[Math.floor(Math.random() * types.length)];
-      const size = Math.random() * 15 + 8;
+      const size = Math.random() * 12 + 6;
       return {
         x: Math.random() * canvas.width,
         y: initBottom ? canvas.height + 20 : Math.random() * canvas.height,
         size,
-        speedY: -(Math.random() * 0.8 + 0.4),
-        speedX: (Math.random() - 0.5) * 0.5,
+        speedY: -(Math.random() * 0.6 + 0.3),
+        speedX: (Math.random() - 0.5) * 0.4,
         rotation: Math.random() * Math.PI * 2,
-        rotationSpeed: (Math.random() - 0.5) * 0.02,
+        rotationSpeed: (Math.random() - 0.5) * 0.015,
         color: colors[Math.floor(Math.random() * colors.length)],
         type,
-        opacity: Math.random() * 0.4 + 0.3,
-        bounceMultiplier: Math.random() * 0.2 + 0.05,
-        wiggleSpeed: Math.random() * 0.02 + 0.005,
-        wiggleWidth: Math.random() * 10 + 5,
+        opacity: Math.random() * 0.35 + 0.25,
+        bounceMultiplier: Math.random() * 0.15 + 0.05,
+        wiggleSpeed: Math.random() * 0.015 + 0.005,
+        wiggleWidth: Math.random() * 8 + 4,
         time: Math.random() * 100,
       };
     };
 
     // Initialize particles
-    for (let i = 0; i < 40; i++) {
-      particles.push(createParticle(false));
+    if (!prefersReducedMotion) {
+      for (let i = 0; i < maxParticles; i++) {
+        particles.push(createParticle(false));
+      }
     }
 
     const drawHeart = (c: CanvasRenderingContext2D, x: number, y: number, size: number) => {
@@ -130,7 +141,7 @@ export default function FloatingParticles() {
     };
 
     const drawButterfly = (c: CanvasRenderingContext2D, x: number, y: number, size: number, time: number) => {
-      const wingWiggle = Math.abs(Math.sin(time * 0.1));
+      const wingWiggle = Math.abs(Math.sin(time * 0.08));
       c.beginPath();
       // Left wings
       c.ellipse(x - size * 0.4, y - size * 0.2, size * wingWiggle * 0.5, size * 0.4, -0.2, 0, Math.PI * 2);
@@ -141,14 +152,25 @@ export default function FloatingParticles() {
       c.fill();
       
       // Butterfly body
-      c.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      c.fillStyle = 'rgba(255, 255, 255, 0.6)';
       c.beginPath();
-      c.ellipse(x, y, size * 0.1, size * 0.5, 0, 0, Math.PI * 2);
+      c.ellipse(x, y, size * 0.08, size * 0.45, 0, 0, Math.PI * 2);
       c.fill();
     };
 
+    // Tab visibility handling
+    const handleVisibilityChange = () => {
+      isTabVisible = !document.hidden;
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // Animation loop
     const animate = () => {
+      if (!isTabVisible || prefersReducedMotion) {
+        animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach((p, idx) => {
@@ -165,8 +187,10 @@ export default function FloatingParticles() {
 
         switch (p.type) {
           case 'heart':
-            ctx.shadowColor = 'rgba(236, 72, 153, 0.9)';
-            ctx.shadowBlur = 12;
+            if (enableShadows) {
+              ctx.shadowColor = 'rgba(236, 72, 153, 0.4)';
+              ctx.shadowBlur = 6;
+            }
             drawHeart(ctx, 0, 0, p.size);
             break;
           case 'star':
@@ -203,6 +227,7 @@ export default function FloatingParticles() {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
       window.removeEventListener('resize', resizeCanvas);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

@@ -1,10 +1,63 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Heart, Sparkles, Smile, MessageSquare, Coffee, Music, CloudRain, 
   CloudSnow, Sun, Moon, Volume2, VolumeX, Mail, Gift, Flame, Compass,
   ChevronRight, RefreshCw, Feather, Droplet, Cloud, Award, HeartHandshake, Eye
 } from 'lucide-react';
+import { supabaseService, isRealSupabase } from '../lib/supabase';
+
+// Lazy load all sections to improve initial page load performance
+const VirtualLoveExperience = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.VirtualLoveExperience })));
+const TeddyCollection = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.TeddyCollection })));
+const ChocolateCollection = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.ChocolateCollection })));
+const FlowerGarden = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.FlowerGarden })));
+const LoveLetterLibrary = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.LoveLetterLibrary })));
+const MiniComfortGames = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.MiniComfortGames })));
+const MoodBooster = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.MoodBooster })));
+const RelaxationPlayer = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.RelaxationPlayer })));
+const DailyComfortChecklist = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.DailyComfortChecklist })));
+const MessageForRuu = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.MessageForRuu })));
+const SurpriseGiftBox = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.SurpriseGiftBox })));
+const FinalSection = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.FinalSection })));
+
+const ComfortJourney = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.ComfortJourney })));
+const OpenWhenEnvelopes = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.OpenWhenEnvelopes })));
+const BreathingCompanion = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.BreathingCompanion })));
+const SleepMode = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.SleepMode })));
+const DailySurprise = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.DailySurprise })));
+const PositiveAffirmations = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.PositiveAffirmations })));
+const MemoryWall = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.MemoryWall })));
+const MoodMusic = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.MoodMusic })));
+const CuteCompanion = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.CuteCompanion })));
+const CareStreak = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.CareStreak })));
+const RewardCollection = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.RewardCollection })));
+
+const TodaysLove = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.TodaysLove })));
+const LoveJar = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.LoveJar })));
+const SelfCareRoutine = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.SelfCareRoutine })));
+const MoodGarden = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.MoodGarden })));
+const CareBox = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.CareBox })));
+const WishWall = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.WishWall })));
+const LoveNotes = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.LoveNotes })));
+const RainyWindow = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.RainyWindow })));
+const PremiumMusicPlayer = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.PremiumMusicPlayer })));
+const DailyGift = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.DailyGift })));
+const Achievements = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.Achievements })));
+const TeddyReactions = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.TeddyReactions })));
+
+const DailyCareCompanion = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.DailyCareCompanion })));
+const ComfortWheel = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.ComfortWheel })));
+const KindnessWall = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.KindnessWall })));
+const ComfortMeditation = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.ComfortMeditation })));
+const VirtualGiftShelf = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.VirtualGiftShelf })));
+const LoveTimeline = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.LoveTimeline })));
+const GratitudeGarden = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.GratitudeGarden })));
+const ThemeCustomizer = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.ThemeCustomizer })));
+const FinalThankYou = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.FinalThankYou })));
+
+const PeriodHubAdminDashboard = lazy(() => import('./PeriodHubAdminDashboard').then(m => ({ default: m.PeriodHubAdminDashboard })));
+const CareReminders = lazy(() => import('./CareReminders').then(m => ({ default: m.CareReminders })));
 
 // --- COZY AUDIO SYNTHESIZER ENGINE (Web Audio API) ---
 class CozyAudioEngine {
@@ -571,6 +624,33 @@ const CHEER_UPS = [
   "I'm sending a million virtual forehead kisses to soothe you. Mwah! 💋"
 ];
 
+const THEME_BACKGROUNDS: Record<string, { day: string; night: string }> = {
+  pink_dream: {
+    day: 'bg-radial from-[#fff4f6] via-[#faf0ff] to-[#fffafc] text-zinc-700',
+    night: 'bg-radial from-[#1e132c] via-[#10071c] to-[#0a0312] text-slate-100'
+  },
+  lavender_glow: {
+    day: 'bg-radial from-[#f5f3ff] via-[#eef2ff] to-[#fafaff] text-zinc-700',
+    night: 'bg-radial from-[#180f2d] via-[#0b0518] to-[#05010a] text-slate-100'
+  },
+  rose_gold: {
+    day: 'bg-radial from-[#fff7ed] via-[#fff1f2] to-[#fafaf9] text-zinc-700',
+    night: 'bg-radial from-[#251216] via-[#140608] to-[#0a0102] text-slate-100'
+  },
+  aurora_sky: {
+    day: 'bg-radial from-[#ecfdf5] via-[#f0fdf4] to-[#f8fafc] text-zinc-700',
+    night: 'bg-radial from-[#022c22] via-[#041e17] to-[#010907] text-slate-100'
+  },
+  soft_night: {
+    day: 'bg-radial from-[#f1f5f9] via-[#e2e8f0] to-[#f8fafc] text-zinc-700',
+    night: 'bg-radial from-[#0f172a] via-[#020617] to-[#000000] text-slate-100'
+  },
+  cream_white: {
+    day: 'bg-radial from-[#fefbf6] via-[#fcf6eb] to-[#fffdfa] text-zinc-700',
+    night: 'bg-radial from-[#1c1917] via-[#141210] to-[#0c0a09] text-slate-100'
+  }
+};
+
 // Falling Sakura Petals & Heart Canvas Particle generator helper
 interface SakuraParticle {
   id: number;
@@ -588,6 +668,20 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
   // --- STATES ---
   const [isLoading, setIsLoading] = useState(false);
   const [loadTextIdx, setLoadTextIdx] = useState(0);
+  const [theme, setTheme] = useState<string>(() => {
+    try {
+      return localStorage.getItem('ruu_hub_theme') || 'pink_dream';
+    } catch (e) {
+      return 'pink_dream';
+    }
+  });
+
+  const handleSetTheme = (newTheme: string) => {
+    setTheme(newTheme);
+    try {
+      localStorage.setItem('ruu_hub_theme', newTheme);
+    } catch (e) {}
+  };
   
   // Custom states for counters (persist in localstorage for extra luxury!)
   const [counters, setCounters] = useState(() => {
@@ -625,6 +719,99 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
   // Comfort Level dynamically computed
   const [comfortScore, setComfortScore] = useState(78); // Out of 100
 
+  // --- SUPABASE AUTH & BACKEND INTEGRATION STATES ---
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
+  const [adminClicksCount, setAdminClicksCount] = useState(0);
+  const [isEmailLoginModalOpen, setIsEmailLoginModalOpen] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
+
+  // Handle hidden admin launch trigger (clicking title/brand header 5 times)
+  const handleAdminClick = () => {
+    const nextCount = adminClicksCount + 1;
+    setAdminClicksCount(nextCount);
+    if (nextCount >= 5) {
+      setShowAdminDashboard(true);
+      setAdminClicksCount(0);
+    }
+  };
+
+  useEffect(() => {
+    // Listen to real-time auth changes
+    const unsubscribe = supabaseService.auth.onAuthStateChange((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch data on login
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchDbData = async () => {
+      try {
+        const dbCounters = await supabaseService.counters.get(currentUser.id);
+        if (dbCounters) {
+          setCounters(dbCounters);
+        }
+        const savedScore = localStorage.getItem(`ruu_comfort_score_${currentUser.id}`);
+        if (savedScore) {
+          setComfortScore(parseInt(savedScore, 10));
+        }
+      } catch (err) {
+        console.warn("Error fetching data from database:", err);
+      }
+    };
+    fetchDbData();
+  }, [currentUser]);
+
+  // Sync to database
+  useEffect(() => {
+    if (!currentUser) return;
+    supabaseService.counters.save(currentUser.id, counters).catch(err => {
+      console.warn("Could not sync counters with database:", err);
+    });
+  }, [counters, currentUser]);
+
+  const handleGuestLogin = async () => {
+    try {
+      const user = await supabaseService.auth.loginGuest();
+      setCurrentUser(user);
+      setAuthMessage('Logged in as Guest! ✨');
+      setTimeout(() => setAuthMessage(''), 3000);
+    } catch (err: any) {
+      setAuthMessage(err.message || 'Login failed');
+    }
+  };
+
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput.trim()) return;
+    try {
+      const user = await supabaseService.auth.loginEmail(emailInput.trim(), nameInput.trim() || undefined);
+      setCurrentUser(user);
+      setIsEmailLoginModalOpen(false);
+      setAuthMessage('Successfully signed in! 🧸');
+      setEmailInput('');
+      setNameInput('');
+      setTimeout(() => setAuthMessage(''), 3000);
+    } catch (err: any) {
+      setAuthMessage(err.message || 'Login failed');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabaseService.auth.logout();
+      setCurrentUser(null);
+      setAuthMessage('Logged out safely.');
+      setTimeout(() => setAuthMessage(''), 3000);
+    } catch (err: any) {
+      setAuthMessage('Logout failed');
+    }
+  };
+
   // Loader Text cycle
   const loaderTexts = [
     "Preparing your warm hugs...",
@@ -653,22 +840,33 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
     };
   }, []);
 
-  // Sync counters to local storage
+  // Sync counters and comfort score to local storage
   useEffect(() => {
     try {
-      localStorage.setItem('love_hub_counters', JSON.stringify(counters));
+      const key = currentUser ? `love_hub_counters_${currentUser.id}` : 'love_hub_counters';
+      localStorage.setItem(key, JSON.stringify(counters));
     } catch (e) {}
-  }, [counters]);
+  }, [counters, currentUser]);
+
+  useEffect(() => {
+    try {
+      const key = currentUser ? `ruu_comfort_score_${currentUser.id}` : 'ruu_comfort_score';
+      localStorage.setItem(key, comfortScore.toString());
+    } catch (e) {}
+  }, [comfortScore, currentUser]);
 
   // Sakura Falling Canvas effect (Interval loop)
   useEffect(() => {
     if (isLoading) return;
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent));
+    const limit = isMobile ? 12 : 28;
     const interval = setInterval(() => {
+      if (document.hidden) return;
       setSakuras((prev) => {
         // Filter out particles that flew off bottom
         const filtered = prev.filter((s) => s.y < 110);
         // Add new particles occasionally
-        if (filtered.length < 35) {
+        if (filtered.length < limit) {
           const isHeart = Math.random() > 0.5;
           return [
             ...filtered,
@@ -676,36 +874,49 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
               id: Date.now() + Math.random(),
               x: Math.random() * 100,
               y: -5,
-              size: Math.random() * 14 + 8,
-              speedX: Math.random() * 1.5 - 0.75,
-              speedY: Math.random() * 0.9 + 0.4,
+              size: Math.random() * 10 + 6,
+              speedX: Math.random() * 1.2 - 0.6,
+              speedY: Math.random() * 0.7 + 0.3,
               rotation: Math.random() * 360,
-              rotSpeed: Math.random() * 2 - 1,
+              rotSpeed: Math.random() * 1.6 - 0.8,
               isHeart
             }
           ];
         }
         return filtered;
       });
-    }, 150);
+    }, 200);
 
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  // Handle ticking animation of existing sakuras
+  // Handle ticking animation of existing sakuras capped at 30 FPS
   useEffect(() => {
     if (isLoading) return;
-    const animId = requestAnimationFrame(function tick() {
-      setSakuras((prev) =>
-        prev.map((s) => ({
-          ...s,
-          x: s.x + s.speedX * 0.12,
-          y: s.y + s.speedY * 0.8,
-          rotation: s.rotation + s.rotSpeed
-        }))
-      );
-      requestAnimationFrame(tick);
-    });
+    let lastTime = performance.now();
+    let animId: number;
+    const fpsLimit = 30;
+    const interval = 1000 / fpsLimit;
+
+    function tick(now: number) {
+      animId = requestAnimationFrame(tick);
+      if (document.hidden) return;
+      
+      const elapsed = now - lastTime;
+      if (elapsed >= interval) {
+        lastTime = now - (elapsed % interval);
+        setSakuras((prev) => {
+          if (prev.length === 0) return prev;
+          return prev.map((s) => ({
+            ...s,
+            x: s.x + s.speedX * 0.12,
+            y: s.y + s.speedY * 0.8,
+            rotation: s.rotation + s.rotSpeed
+          }));
+        });
+      }
+    }
+    animId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animId);
   }, [isLoading]);
 
@@ -927,10 +1138,8 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
   return (
     <div 
       ref={containerRef}
-      className={`relative min-h-screen text-gray-800 transition-colors duration-1000 overflow-hidden select-none pb-24 ${
-        nightMode 
-          ? 'bg-radial from-[#1e132c] via-[#10071c] to-[#0a0312] text-slate-100' 
-          : 'bg-radial from-[#fff4f6] via-[#faf0ff] to-[#fffafc] text-zinc-700'
+      className={`relative min-h-screen transition-colors duration-1000 overflow-hidden select-none pb-24 ${
+        (THEME_BACKGROUNDS[theme] || THEME_BACKGROUNDS.pink_dream)[nightMode ? 'night' : 'day']
       }`}
     >
       {/* Background Aurora Glow */}
@@ -997,7 +1206,11 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
 
       {/* --- FLOATING CONTROLLER RAIL / SYSTEM TOOLBAR --- */}
       <div className="relative z-20 w-full max-w-6xl mx-auto px-4 pt-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div 
+          onClick={handleAdminClick}
+          className="flex items-center gap-3 cursor-pointer select-none active:scale-95 transition-transform"
+          title="Period Hub Cozy Room (Click 5 times for Admin)"
+        >
           <div className="p-3 bg-pink-500/10 backdrop-blur-md rounded-2xl border border-pink-500/20 shadow-sm text-pink-500">
             <span className="text-2xl">🌸</span>
           </div>
@@ -1011,50 +1224,93 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
           </div>
         </div>
 
-        {/* Toggles bar */}
-        <div className="flex flex-wrap items-center gap-2 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-1.5 shadow-sm">
-          {/* Day/Night */}
-          <button 
-            onClick={() => {
-              setNightMode(!nightMode);
-              globalCozyAudio.playPopSound();
-            }}
-            className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
-              nightMode ? 'bg-purple-950/40 text-purple-300' : 'bg-amber-100 text-amber-700'
-            }`}
-            title="Toggle Day/Night visual mode"
-          >
-            {nightMode ? <Moon size={14} /> : <Sun size={14} />}
-            <span>{nightMode ? "Cozy Night" : "Sweet Day"}</span>
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Toggles bar */}
+          <div className="flex flex-wrap items-center gap-2 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-1.5 shadow-sm">
+            {/* Day/Night */}
+            <button 
+              onClick={() => {
+                setNightMode(!nightMode);
+                globalCozyAudio.playPopSound();
+              }}
+              className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
+                nightMode ? 'bg-purple-950/40 text-purple-300' : 'bg-amber-100 text-amber-700'
+              }`}
+              title="Toggle Day/Night visual mode"
+            >
+              {nightMode ? <Moon size={14} /> : <Sun size={14} />}
+              <span>{nightMode ? "Cozy Night" : "Sweet Day"}</span>
+            </button>
 
-          {/* Rain toggle */}
-          <button 
-            onClick={() => {
-              setRainActive(!rainActive);
-              globalCozyAudio.playPopSound();
-            }}
-            className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
-              rainActive ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'text-gray-400 hover:text-pink-400'
-            }`}
-          >
-            <CloudRain size={14} />
-            <span>Rain {rainActive ? "ON 🌧️" : "OFF"}</span>
-          </button>
+            {/* Rain toggle */}
+            <button 
+              onClick={() => {
+                setRainActive(!rainActive);
+                globalCozyAudio.playPopSound();
+              }}
+              className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
+                rainActive ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'text-gray-400 hover:text-pink-400'
+              }`}
+            >
+              <CloudRain size={14} />
+              <span>Rain {rainActive ? "ON 🌧️" : "OFF"}</span>
+            </button>
 
-          {/* Snow toggle */}
-          <button 
-            onClick={() => {
-              setSnowActive(!snowActive);
-              globalCozyAudio.playPopSound();
-            }}
-            className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
-              snowActive ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'text-gray-400 hover:text-pink-400'
-            }`}
-          >
-            <CloudSnow size={14} />
-            <span>Snow {snowActive ? "ON ❄️" : "OFF"}</span>
-          </button>
+            {/* Snow toggle */}
+            <button 
+              onClick={() => {
+                setSnowActive(!snowActive);
+                globalCozyAudio.playPopSound();
+              }}
+              className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
+                snowActive ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'text-gray-400 hover:text-pink-400'
+              }`}
+            >
+              <CloudSnow size={14} />
+              <span>Snow {snowActive ? "ON ❄️" : "OFF"}</span>
+            </button>
+          </div>
+
+          {/* Supabase Authentication Widget */}
+          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-1.5 shadow-sm">
+            {currentUser ? (
+              <div className="flex items-center gap-2 pl-2">
+                <span className="text-sm select-none" title="User Avatar">{currentUser.avatar || '💖'}</span>
+                <div className="text-left select-none max-w-[120px]">
+                  <p className="text-[10px] font-extrabold text-pink-300 leading-none truncate">
+                    {currentUser.name}
+                  </p>
+                  <p className="text-[8px] font-mono text-zinc-400 leading-none uppercase mt-0.5">
+                    {currentUser.isAnonymous ? 'Guest 🌸' : 'Member ✨'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="ml-1 px-2 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/35 text-red-300 hover:text-white transition-all text-[8px] font-black uppercase tracking-wider cursor-pointer"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={handleGuestLogin}
+                  className="px-2 py-1 rounded-lg bg-pink-500/15 hover:bg-pink-500/30 text-pink-300 text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer border border-pink-500/20"
+                >
+                  Guest 🌸
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEmailLoginModalOpen(true);
+                    globalCozyAudio.playPopSound();
+                  }}
+                  className="px-2 py-1 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 text-purple-300 text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer border border-purple-500/20"
+                >
+                  Sign In 🔒
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1381,6 +1637,11 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
         </div>
       </div>
 
+      {/* --- SECTION: TODAY'S LOVE LOCKER --- */}
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 mt-16 space-y-6">
+        <TodaysLove />
+      </div>
+
       {/* --- SECTION: TODAY YOU DESERVE --- */}
       <div className="relative z-10 w-full max-w-6xl mx-auto px-4 mt-16 space-y-6">
         <div className="text-center space-y-1 select-none">
@@ -1424,6 +1685,307 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
             </div>
           ))}
         </div>
+      </div>
+
+      {/* --- EXTENDED PREMIUM EXPERIENCE SECTIONS --- */}
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 mt-16 space-y-20">
+        
+        {/* Dynamic Theme Customizer (Part 5) */}
+        <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
+          <ThemeCustomizer currentTheme={theme} onChangeTheme={handleSetTheme} />
+        </div>
+
+        {/* Daily Care Companion (Part 5) */}
+        <DailyCareCompanion />
+        
+        {/* Comfort Journey Timeline Section */}
+        <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
+          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            <ComfortJourney />
+          </Suspense>
+        </div>
+
+        {/* Love Jar & Self Care Routine Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <LoveJar />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <SelfCareRoutine />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* 1. Virtual Love Experience */}
+        <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/20 shadow-xl">
+          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            <VirtualLoveExperience onTriggerConfetti={onTriggerConfetti} />
+          </Suspense>
+        </div>
+
+        {/* Mood Garden & Care Box Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <MoodGarden />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <CareBox />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Open When Letters Section */}
+        <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
+          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            <OpenWhenEnvelopes />
+          </Suspense>
+        </div>
+
+        {/* 2. Teddy Collection & 3. Chocolate Collection Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <TeddyCollection />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <ChocolateCollection onTriggerConfetti={onTriggerConfetti} />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Breathing Companion & Sleep Mode Ambient Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <BreathingCompanion />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <SleepMode />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Daily Surprise & Positive Affirmations Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <DailySurprise />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <PositiveAffirmations />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Wish Wall & Love Notes Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <WishWall />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <LoveNotes />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* 4. Flower Garden & 5. Love Letter Library */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <FlowerGarden />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <LoveLetterLibrary />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Memory Wall & Mood Music Interactive Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <MemoryWall />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <MoodMusic />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Rainy Window & Premium Music Player Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <RainyWindow />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <PremiumMusicPlayer />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Cozy Care Reminders Section */}
+        <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
+          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            <CareReminders />
+          </Suspense>
+        </div>
+
+        {/* Teddy Bear Interactive Reactions full-width Section */}
+        <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
+          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            <TeddyReactions />
+          </Suspense>
+        </div>
+
+        {/* 6. Mini Comfort Games */}
+        <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/20 shadow-xl">
+          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            <MiniComfortGames onTriggerConfetti={onTriggerConfetti} />
+          </Suspense>
+        </div>
+
+        {/* Cute Teddy Helper Companion & Care Streak Progress Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <CuteCompanion />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <CareStreak />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* 7. Mood Booster & 8. Relaxation Player */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <MoodBooster />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <RelaxationPlayer />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Badge Reward Collection Section */}
+        <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
+          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            <RewardCollection />
+          </Suspense>
+        </div>
+
+        {/* 9. Daily Comfort Checklist & 11. Surprise Gift Box */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <DailyComfortChecklist onUpdateComfortScore={(amt) => setComfortScore(prev => Math.max(0, Math.min(100, prev + amt)))} />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <SurpriseGiftBox onTriggerConfetti={onTriggerConfetti} />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Daily Gift & Achievements Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <DailyGift />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <Achievements />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Kindness Wall Scrolling Ribbon (Part 5) */}
+        <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          <KindnessWall />
+        </Suspense>
+
+        {/* Comfort Wheel & Gratitude Garden Dual Grid (Part 5) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <ComfortWheel />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <GratitudeGarden />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Comfort Meditation & Virtual Gift Shelf Dual Grid (Part 5) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <ComfortMeditation />
+            </Suspense>
+          </div>
+          <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
+            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+              <VirtualGiftShelf />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* Love Timeline Section (Part 5) */}
+        <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
+          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            <LoveTimeline />
+          </Suspense>
+        </div>
+
+        {/* Final Thank You (Part 5) */}
+        <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          <FinalThankYou />
+        </Suspense>
+
+        {/* 10. Message For Ruu */}
+        <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/20 shadow-xl">
+          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            <MessageForRuu onTriggerConfetti={onTriggerConfetti} />
+          </Suspense>
+        </div>
+
+        {/* 12. Final Section with Premium Quote */}
+        <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          <FinalSection />
+        </Suspense>
+
       </div>
 
       {/* --- FLOATING MODALS & OVERLAYS INTERACTION CONTAINER --- */}
@@ -1619,6 +2181,97 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- SUPABASE FLOATING STATUS TOAST --- */}
+      <AnimatePresence>
+        {authMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[150] px-4 py-2 bg-pink-500/20 backdrop-blur-md border border-pink-500 text-pink-300 rounded-full text-xs font-semibold shadow-2xl tracking-wide flex items-center gap-1.5"
+          >
+            <span>✨</span>
+            <span>{authMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- EMAIL SIGN-IN MODAL OVERLAY --- */}
+      <AnimatePresence>
+        {isEmailLoginModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-[#100720]/90 border border-pink-500/30 rounded-[32px] p-6 shadow-2xl relative text-white"
+            >
+              <button
+                onClick={() => setIsEmailLoginModalOpen(false)}
+                className="absolute top-4 right-4 text-zinc-400 hover:text-pink-400 text-sm font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+
+              <div className="text-center space-y-2 mb-6">
+                <span className="text-3xl">🔑</span>
+                <h3 className="font-serif text-xl font-black bg-gradient-to-r from-pink-300 to-purple-400 bg-clip-text text-transparent">
+                  Access Your Cozy Locker
+                </h3>
+                <p className="text-[10px] text-zinc-400">
+                  Connect with Supabase to sync your wishes, feedback history, and comfort stats across devices.
+                </p>
+              </div>
+
+              <form onSubmit={handleEmailLogin} className="space-y-4 text-left">
+                <div className="space-y-1">
+                  <label className="text-[9px] uppercase tracking-widest font-black text-pink-400 block">
+                    Your Name:
+                  </label>
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    placeholder="Lovely Princess (Optional)"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] uppercase tracking-widest font-black text-pink-400 block">
+                    Your Email Address:
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2.5 mt-2 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl text-[10px] uppercase font-black tracking-widest transition-all cursor-pointer shadow-lg"
+                >
+                  Enter Cozy Room ✨
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- ADMIN DASHBOARD OVERLAY --- */}
+      <AnimatePresence>
+        {showAdminDashboard && (
+          <div className="fixed inset-0 z-[120] bg-slate-950/95 overflow-y-auto">
+            <PeriodHubAdminDashboard onClose={() => setShowAdminDashboard(false)} />
+          </div>
         )}
       </AnimatePresence>
     </div>
