@@ -12,7 +12,7 @@ declare global {
 }
 
 function getYouTubeId(url: string | undefined): string {
-  if (!url) return "LlwHphMhUOo";
+  if (!url) return "MAvHJCModP0";
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|si=)([^#\&\?]*).*/;
   // Try extracting standard Youtube watch ID, shortlink, parameter or si
   const match = url.match(regExp);
@@ -37,7 +37,7 @@ function getYouTubeId(url: string | undefined): string {
       }
     }
   } catch (e) {}
-  return "LlwHphMhUOo";
+  return "MAvHJCModP0";
 }
 
 export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
@@ -145,12 +145,9 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
                 try {
                   event.target.playVideo();
                   event.target.unMute();
-                  
-                  // Query actual muted status since the browser might block this async call
-                  const isPhysMuted = typeof event.target.isMuted === 'function' ? event.target.isMuted() : true;
-                  setIsMuted(isPhysMuted);
-                  isMutedRef.current = isPhysMuted;
-                  setPlaybackStatus(isPhysMuted ? "Muted (Tap to unmute)" : "Playing Live 🔊");
+                  setIsMuted(false);
+                  isMutedRef.current = false;
+                  setPlaybackStatus("Playing Live 🔊");
                 } catch (e) {
                   console.warn("Unmuted play error onReady:", e);
                 }
@@ -179,17 +176,17 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
                   try {
                     player.unMute();
                     player.setVolume(85);
-                    const isPhysMuted = typeof player.isMuted === 'function' ? player.isMuted() : true;
-                    setIsMuted(isPhysMuted);
-                    isMutedRef.current = isPhysMuted;
-                    setPlaybackStatus(isPhysMuted ? "Muted (Tap to unmute)" : "Playing Live 🔊");
+                    setIsMuted(false);
+                    isMutedRef.current = false;
+                    setPlaybackStatus("Playing Live 🔊");
                   } catch (e) {}
                 } else if (!isMutedRef.current && !userVoluntarilyMutedRef.current) {
                   try {
                     player.unMute();
                     player.setVolume(85);
-                    const isPhysMuted = typeof player.isMuted === 'function' ? player.isMuted() : false;
-                    setPlaybackStatus(isPhysMuted ? "Muted (Tap to unmute)" : "Playing Live 🔊");
+                    setIsMuted(false);
+                    isMutedRef.current = false;
+                    setPlaybackStatus("Playing Live 🔊");
                   } catch (e) {}
                 } else {
                   setPlaybackStatus("Autoplay Ready ✨");
@@ -267,15 +264,10 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
               if (typeof player.setVolume === 'function') {
                 player.setVolume(85);
               }
-              // Keep state synced with the actual physical status
-              setIsMuted(true);
-              isMutedRef.current = true;
-              setPlaybackStatus("Muted (Tap to unmute)");
-            } else {
-              setIsMuted(false);
-              isMutedRef.current = false;
-              setPlaybackStatus("Playing Live 🔊");
             }
+            setIsMuted(false);
+            isMutedRef.current = false;
+            setPlaybackStatus("Playing Live 🔊");
           } else {
             // Keep state in sync with physical player state
             if (physicallyMuted !== isMutedRef.current) {
