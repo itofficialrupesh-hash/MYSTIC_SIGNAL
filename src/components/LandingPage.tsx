@@ -1224,17 +1224,19 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
 
       {/* ─── COZY PERIOD HUB POPUP OVERLAY SANCTUARY ─── */}
       {showPeriodHubModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/95 backdrop-blur-lg flex flex-col justify-start items-center p-4 md:p-8 animate-fade-in">
-          {/* Floating close button at the very top right */}
-          <button 
-            onClick={() => setShowPeriodHubModal(false)}
-            className="fixed top-4 right-4 md:top-6 md:right-6 bg-slate-900/90 hover:bg-pink-500 hover:text-white text-zinc-300 rounded-full p-2.5 cursor-pointer transition-all z-[60] border border-pink-500/30 hover:scale-105 shadow-2xl flex items-center justify-center"
-            title="Close Sanctuary"
-          >
-            <X size={20} />
-          </button>
+        <>
+          <div className="fixed inset-0 z-[40] bg-slate-950/95 backdrop-blur-lg animate-fade-in pointer-events-none" />
+          <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col justify-start items-center p-4 md:p-8 animate-fade-in">
+            {/* Floating close button at the very top right */}
+            <button 
+              onClick={() => setShowPeriodHubModal(false)}
+              className="fixed top-4 right-4 md:top-6 md:right-6 bg-slate-900/90 hover:bg-pink-500 hover:text-white text-zinc-300 rounded-full p-2.5 cursor-pointer transition-all z-[60] border border-pink-500/30 hover:scale-105 shadow-2xl flex items-center justify-center"
+              title="Close Sanctuary"
+            >
+              <X size={20} />
+            </button>
 
-          <div className="w-full max-w-5xl mx-auto pt-12 pb-8 relative z-10">
+            <div className="w-full max-w-5xl mx-auto pt-12 pb-8 relative z-10">
             {!isPeriodHubUnlocked ? (
               <div className="max-w-md mx-auto pt-4 md:pt-12">
                 <PeriodHubLock 
@@ -1261,13 +1263,14 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
                   </p>
                 </div>
 
-                <div className="bg-[#110a1f]/80 backdrop-blur-xl border border-pink-500/20 rounded-[32px] p-2 md:p-4 shadow-2xl relative overflow-hidden">
+                <div className="bg-[#110a1f]/80 border border-pink-500/20 rounded-[32px] p-2 md:p-4 shadow-2xl relative overflow-hidden">
                   <PeriodHub onTriggerConfetti={onTriggerConfetti} />
                 </div>
               </div>
             )}
           </div>
         </div>
+        </>
       )}
 
     </div>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Heart, Sparkles, Smile, MessageSquare, Coffee, Music, CloudRain, 
@@ -8,56 +9,56 @@ import {
 import { supabaseService, isRealSupabase } from '../lib/supabase';
 
 // Lazy load all sections to improve initial page load performance
-const VirtualLoveExperience = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.VirtualLoveExperience })));
-const TeddyCollection = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.TeddyCollection })));
-const ChocolateCollection = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.ChocolateCollection })));
-const FlowerGarden = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.FlowerGarden })));
-const LoveLetterLibrary = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.LoveLetterLibrary })));
-const MiniComfortGames = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.MiniComfortGames })));
-const MoodBooster = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.MoodBooster })));
-const RelaxationPlayer = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.RelaxationPlayer })));
-const DailyComfortChecklist = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.DailyComfortChecklist })));
-const MessageForRuu = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.MessageForRuu })));
-const SurpriseGiftBox = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.SurpriseGiftBox })));
-const FinalSection = lazy(() => import('./PeriodHubSections').then(m => ({ default: m.FinalSection })));
+import { VirtualLoveExperience } from './PeriodHubSections';
+import { TeddyCollection } from './PeriodHubSections';
+import { ChocolateCollection } from './PeriodHubSections';
+import { FlowerGarden } from './PeriodHubSections';
+import { LoveLetterLibrary } from './PeriodHubSections';
+import { MiniComfortGames } from './PeriodHubSections';
+import { MoodBooster } from './PeriodHubSections';
+import { RelaxationPlayer } from './PeriodHubSections';
+import { DailyComfortChecklist } from './PeriodHubSections';
+import { MessageForRuu } from './PeriodHubSections';
+import { SurpriseGiftBox } from './PeriodHubSections';
+import { FinalSection } from './PeriodHubSections';
 
-const ComfortJourney = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.ComfortJourney })));
-const OpenWhenEnvelopes = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.OpenWhenEnvelopes })));
-const BreathingCompanion = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.BreathingCompanion })));
-const SleepMode = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.SleepMode })));
-const DailySurprise = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.DailySurprise })));
-const PositiveAffirmations = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.PositiveAffirmations })));
-const MemoryWall = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.MemoryWall })));
-const MoodMusic = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.MoodMusic })));
-const CuteCompanion = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.CuteCompanion })));
-const CareStreak = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.CareStreak })));
-const RewardCollection = lazy(() => import('./PremiumPeriodHubSections').then(m => ({ default: m.RewardCollection })));
+import { ComfortJourney } from './PremiumPeriodHubSections';
+import { OpenWhenEnvelopes } from './PremiumPeriodHubSections';
+import { BreathingCompanion } from './PremiumPeriodHubSections';
+import { SleepMode } from './PremiumPeriodHubSections';
+import { DailySurprise } from './PremiumPeriodHubSections';
+import { PositiveAffirmations } from './PremiumPeriodHubSections';
+import { MemoryWall } from './PremiumPeriodHubSections';
+import { MoodMusic } from './PremiumPeriodHubSections';
+import { CuteCompanion } from './PremiumPeriodHubSections';
+import { CareStreak } from './PremiumPeriodHubSections';
+import { RewardCollection } from './PremiumPeriodHubSections';
 
-const TodaysLove = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.TodaysLove })));
-const LoveJar = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.LoveJar })));
-const SelfCareRoutine = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.SelfCareRoutine })));
-const MoodGarden = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.MoodGarden })));
-const CareBox = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.CareBox })));
-const WishWall = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.WishWall })));
-const LoveNotes = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.LoveNotes })));
-const RainyWindow = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.RainyWindow })));
-const PremiumMusicPlayer = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.PremiumMusicPlayer })));
-const DailyGift = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.DailyGift })));
-const Achievements = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.Achievements })));
-const TeddyReactions = lazy(() => import('./PeriodHubExpandedSections').then(m => ({ default: m.TeddyReactions })));
+import { TodaysLove } from './PeriodHubExpandedSections';
+import { LoveJar } from './PeriodHubExpandedSections';
+import { SelfCareRoutine } from './PeriodHubExpandedSections';
+import { MoodGarden } from './PeriodHubExpandedSections';
+import { CareBox } from './PeriodHubExpandedSections';
+import { WishWall } from './PeriodHubExpandedSections';
+import { LoveNotes } from './PeriodHubExpandedSections';
+import { RainyWindow } from './PeriodHubExpandedSections';
+import { PremiumMusicPlayer } from './PeriodHubExpandedSections';
+import { DailyGift } from './PeriodHubExpandedSections';
+import { Achievements } from './PeriodHubExpandedSections';
+import { TeddyReactions } from './PeriodHubExpandedSections';
 
-const DailyCareCompanion = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.DailyCareCompanion })));
-const ComfortWheel = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.ComfortWheel })));
-const KindnessWall = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.KindnessWall })));
-const ComfortMeditation = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.ComfortMeditation })));
-const VirtualGiftShelf = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.VirtualGiftShelf })));
-const LoveTimeline = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.LoveTimeline })));
-const GratitudeGarden = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.GratitudeGarden })));
-const ThemeCustomizer = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.ThemeCustomizer })));
-const FinalThankYou = lazy(() => import('./PeriodHubExpandedSectionsPart5').then(m => ({ default: m.FinalThankYou })));
+import { DailyCareCompanion } from './PeriodHubExpandedSectionsPart5';
+import { ComfortWheel } from './PeriodHubExpandedSectionsPart5';
+import { KindnessWall } from './PeriodHubExpandedSectionsPart5';
+import { ComfortMeditation } from './PeriodHubExpandedSectionsPart5';
+import { VirtualGiftShelf } from './PeriodHubExpandedSectionsPart5';
+import { LoveTimeline } from './PeriodHubExpandedSectionsPart5';
+import { GratitudeGarden } from './PeriodHubExpandedSectionsPart5';
+import { ThemeCustomizer } from './PeriodHubExpandedSectionsPart5';
+import { FinalThankYou } from './PeriodHubExpandedSectionsPart5';
 
-const PeriodHubAdminDashboard = lazy(() => import('./PeriodHubAdminDashboard').then(m => ({ default: m.PeriodHubAdminDashboard })));
-const CareReminders = lazy(() => import('./CareReminders').then(m => ({ default: m.CareReminders })));
+import { PeriodHubAdminDashboard } from './PeriodHubAdminDashboard';
+import { CareReminders } from './CareReminders';
 
 // --- COZY AUDIO SYNTHESIZER ENGINE (Web Audio API) ---
 class CozyAudioEngine {
@@ -664,6 +665,90 @@ interface SakuraParticle {
   isHeart: boolean;
 }
 
+const SakuraCanvas = React.memo(({ isLoading }: { isLoading: boolean }) => {
+  const [sakuras, setSakuras] = useState<SakuraParticle[]>([]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent));
+    const limit = isMobile ? 12 : 28;
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      setSakuras((prev) => {
+        const filtered = prev.filter((s) => s.y < 110);
+        if (filtered.length < limit) {
+          const isHeart = Math.random() > 0.5;
+          return [
+            ...filtered,
+            {
+              id: Date.now() + Math.random(),
+              x: Math.random() * 100,
+              y: -5,
+              size: Math.random() * 10 + 6,
+              speedX: Math.random() * 1.2 - 0.6,
+              speedY: Math.random() * 0.7 + 0.3,
+              rotation: Math.random() * 360,
+              rotSpeed: Math.random() * 1.6 - 0.8,
+              isHeart
+            }
+          ];
+        }
+        return filtered;
+      });
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    let lastTime = performance.now();
+    let animId: number;
+    const fpsLimit = 60;
+    const interval = 1000 / fpsLimit;
+
+    function tick(now: number) {
+      animId = requestAnimationFrame(tick);
+      if (document.hidden) return;
+      
+      const elapsed = now - lastTime;
+      if (elapsed >= interval) {
+        lastTime = now - (elapsed % interval);
+        setSakuras((prev) => {
+          if (prev.length === 0) return prev;
+          return prev.map((s) => ({
+            ...s,
+            x: s.x + s.speedX * 0.12,
+            y: s.y + s.speedY * 0.8,
+            rotation: s.rotation + s.rotSpeed
+          }));
+        });
+      }
+    }
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [isLoading]);
+
+  return (
+    <>
+      {sakuras.map((petal) => (
+        <div
+          key={petal.id}
+          className="absolute top-0 left-0 select-none pointer-events-none text-md"
+          style={{
+            transform: `translate3d(${petal.x}vw, ${petal.y}vh, 0) rotate(${petal.rotation}deg)`,
+            fontSize: `${petal.size}px`,
+            opacity: 0.65,
+            color: petal.isHeart ? '#fda4af' : '#fbcfe8'
+          }}
+        >
+          {petal.isHeart ? '❤️' : '🌸'}
+        </div>
+      ))}
+    </>
+  );
+});
+
 export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: () => void }) {
   // --- STATES ---
   const [isLoading, setIsLoading] = useState(false);
@@ -705,12 +790,10 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
 
   // Interaction Feedback states
   const [activeOverlayMessage, setActiveOverlayMessage] = useState<string | null>(null);
-  const [activeOverlayType, setActiveOverlayType] = useState<'hug' | 'teddy' | 'chocolate' | 'flower' | 'letter' | 'cheer' | null>(null);
+  const [activeOverlayType, setActiveOverlayType] = useState<'hug' | 'teddy' | 'chocolate' | 'flower' | 'letter' | 'cheer' | 'hchoco' | 'tea' | 'love' | null>(null);
   const [letterOpen, setLetterOpen] = useState<LoveLetterItem | null>(null);
   const [cheerMsg, setCheerMsg] = useState('');
 
-  // Floating micro-particles overlay lists
-  const [sakuras, setSakuras] = useState<SakuraParticle[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Selected deserve card for beautiful popup details
@@ -855,70 +938,6 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
     } catch (e) {}
   }, [comfortScore, currentUser]);
 
-  // Sakura Falling Canvas effect (Interval loop)
-  useEffect(() => {
-    if (isLoading) return;
-    const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent));
-    const limit = isMobile ? 12 : 28;
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      setSakuras((prev) => {
-        // Filter out particles that flew off bottom
-        const filtered = prev.filter((s) => s.y < 110);
-        // Add new particles occasionally
-        if (filtered.length < limit) {
-          const isHeart = Math.random() > 0.5;
-          return [
-            ...filtered,
-            {
-              id: Date.now() + Math.random(),
-              x: Math.random() * 100,
-              y: -5,
-              size: Math.random() * 10 + 6,
-              speedX: Math.random() * 1.2 - 0.6,
-              speedY: Math.random() * 0.7 + 0.3,
-              rotation: Math.random() * 360,
-              rotSpeed: Math.random() * 1.6 - 0.8,
-              isHeart
-            }
-          ];
-        }
-        return filtered;
-      });
-    }, 200);
-
-    return () => clearInterval(interval);
-  }, [isLoading]);
-
-  // Handle ticking animation of existing sakuras capped at 30 FPS
-  useEffect(() => {
-    if (isLoading) return;
-    let lastTime = performance.now();
-    let animId: number;
-    const fpsLimit = 30;
-    const interval = 1000 / fpsLimit;
-
-    function tick(now: number) {
-      animId = requestAnimationFrame(tick);
-      if (document.hidden) return;
-      
-      const elapsed = now - lastTime;
-      if (elapsed >= interval) {
-        lastTime = now - (elapsed % interval);
-        setSakuras((prev) => {
-          if (prev.length === 0) return prev;
-          return prev.map((s) => ({
-            ...s,
-            x: s.x + s.speedX * 0.12,
-            y: s.y + s.speedY * 0.8,
-            rotation: s.rotation + s.rotSpeed
-          }));
-        });
-      }
-    }
-    animId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animId);
-  }, [isLoading]);
 
   // Comfort Meter automatic level updates
   useEffect(() => {
@@ -982,7 +1001,7 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
       globalCozyAudio.playSparkleSound();
       setCounters(prev => ({ ...prev, love: prev.love + 1 }));
       if (onTriggerConfetti) onTriggerConfetti();
-      setActiveOverlayType('flower');
+      setActiveOverlayType('love');
       setActiveOverlayMessage("My endless love is bursting around you like warm sunshine! You are the most adorable girl ever. 💖");
     }
 
@@ -1149,22 +1168,7 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
       {/* Dynamic Rain/Snow/Sakura canvas simulator overlays */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         {/* Sakura petals and hearts falling */}
-        {sakuras.map((petal) => (
-          <div
-            key={petal.id}
-            className="absolute select-none pointer-events-none text-md"
-            style={{
-              left: `${petal.x}%`,
-              top: `${petal.y}%`,
-              fontSize: `${petal.size}px`,
-              transform: `rotate(${petal.rotation}deg)`,
-              opacity: 0.65,
-              color: petal.isHeart ? '#fda4af' : '#fbcfe8'
-            }}
-          >
-            {petal.isHeart ? '❤️' : '🌸'}
-          </div>
-        ))}
+        <SakuraCanvas isLoading={isLoading} />
 
         {/* Rain Simulator overlay drops */}
         {rainActive && (
@@ -1484,15 +1488,15 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
           {/* Interactive Button Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
-              { id: 'love', label: '❤️ Send Love', color: 'hover:bg-red-500/10 hover:border-red-500/40 text-red-500' },
-              { id: 'hug', label: '🫂 Virtual Hug', color: 'hover:bg-pink-500/10 hover:border-pink-500/40 text-pink-500' },
-              { id: 'teddy', label: '🧸 Teddy Delivery', color: 'hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-600' },
-              { id: 'chocolate', label: '🍫 Chocolate', color: 'hover:bg-pink-600/10 hover:border-pink-600/40 text-pink-700 dark:text-pink-300' },
-              { id: 'flower', label: '🌹 Flowers', color: 'hover:bg-rose-500/10 hover:border-rose-500/40 text-rose-500' },
-              { id: 'hchoco', label: '☕ Hot Chocolate', color: 'hover:bg-orange-500/10 hover:border-orange-500/40 text-orange-600' },
-              { id: 'tea', label: '🍵 Warm Tea', color: 'hover:bg-teal-500/10 hover:border-teal-500/40 text-teal-600' },
-              { id: 'letter', label: '💌 Love Letter', color: 'hover:bg-indigo-500/10 hover:border-indigo-500/40 text-indigo-500' },
-              { id: 'cheer', label: '✨ Cheer Up', color: 'hover:bg-amber-400/10 hover:border-amber-400/40 text-amber-500' }
+              { id: 'love', label: '❤️ Send Love', color: 'hover:bg-red-500/20 hover:border-red-500/40 text-red-500 dark:text-red-400 bg-white/5 border-white/10 dark:bg-black/20' },
+              { id: 'hug', label: '🫂 Virtual Hug', color: 'hover:bg-pink-500/20 hover:border-pink-500/40 text-pink-500 dark:text-pink-400 bg-white/5 border-white/10 dark:bg-black/20' },
+              { id: 'teddy', label: '🧸 Teddy Delivery', color: 'hover:bg-amber-500/20 hover:border-amber-500/40 text-amber-600 dark:text-amber-400 bg-white/5 border-white/10 dark:bg-black/20' },
+              { id: 'chocolate', label: '🍫 Chocolate', color: 'hover:bg-pink-600/20 hover:border-pink-600/40 text-pink-700 dark:text-pink-300 bg-white/5 border-white/10 dark:bg-black/20' },
+              { id: 'flower', label: '🌹 Flowers', color: 'hover:bg-rose-500/20 hover:border-rose-500/40 text-rose-500 dark:text-rose-400 bg-white/5 border-white/10 dark:bg-black/20' },
+              { id: 'hchoco', label: '☕ Hot Chocolate', color: 'hover:bg-orange-500/20 hover:border-orange-500/40 text-orange-600 dark:text-orange-400 bg-white/5 border-white/10 dark:bg-black/20' },
+              { id: 'tea', label: '🍵 Warm Tea', color: 'hover:bg-teal-500/20 hover:border-teal-500/40 text-teal-600 dark:text-teal-400 bg-white/5 border-white/10 dark:bg-black/20' },
+              { id: 'letter', label: '💌 Love Letter', color: 'hover:bg-indigo-500/20 hover:border-indigo-500/40 text-indigo-500 dark:text-indigo-400 bg-white/5 border-white/10 dark:bg-black/20' },
+              { id: 'cheer', label: '✨ Cheer Up', color: 'hover:bg-amber-400/20 hover:border-amber-400/40 text-amber-500 dark:text-amber-400 bg-white/5 border-white/10 dark:bg-black/20' }
             ].map((btn) => (
               <button
                 key={btn.id}
@@ -1501,19 +1505,19 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
                     setCounters(prev => ({ ...prev, love: prev.love + 1 }));
                     setComfortScore(prev => Math.min(100, prev + 4));
                     globalCozyAudio.playWarmSwellSound();
-                    setActiveOverlayType('chocolate');
+                    setActiveOverlayType('hchoco');
                     setActiveOverlayMessage("Brewing hot chocolate topped with miniature marshmallows! Feel the rich warmth sink down to your toes. ☕✨");
                   } else if (btn.id === 'tea') {
                     setCounters(prev => ({ ...prev, hugs: prev.hugs + 1 }));
                     setComfortScore(prev => Math.min(100, prev + 3));
                     globalCozyAudio.playSparkleSound();
-                    setActiveOverlayType('chocolate');
+                    setActiveOverlayType('tea');
                     setActiveOverlayMessage("Steeping a delicate mug of honey chamomile tea. It reduces muscle spasms and soothes cramp aches instantly. 🍵🌸");
                   } else {
                     triggerAction(btn.id as any);
                   }
                 }}
-                className={`py-3 px-4 rounded-2xl text-xs font-bold font-sans glass-card border border-white/10 shadow-sm cursor-pointer transition-all duration-300 hover:scale-[1.04] active:scale-[0.97] flex items-center justify-center gap-1.5 ${btn.color}`}
+                className={`py-3 px-4 rounded-2xl text-xs font-bold font-sans glass-card border shadow-sm cursor-pointer transition-all duration-300 hover:scale-[1.04] active:scale-[0.97] flex items-center justify-center gap-1.5 ${btn.color}`}
               >
                 {btn.label}
               </button>
@@ -1700,297 +1704,299 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
         
         {/* Comfort Journey Timeline Section */}
         <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
-          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          
             <ComfortJourney />
-          </Suspense>
+          
         </div>
 
         {/* Love Jar & Self Care Routine Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <LoveJar />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <SelfCareRoutine />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* 1. Virtual Love Experience */}
         <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/20 shadow-xl">
-          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          
             <VirtualLoveExperience onTriggerConfetti={onTriggerConfetti} />
-          </Suspense>
+          
         </div>
 
         {/* Mood Garden & Care Box Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <MoodGarden />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <CareBox />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Open When Letters Section */}
         <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
-          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          
             <OpenWhenEnvelopes />
-          </Suspense>
+          
         </div>
 
         {/* 2. Teddy Collection & 3. Chocolate Collection Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <TeddyCollection />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <ChocolateCollection onTriggerConfetti={onTriggerConfetti} />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Breathing Companion & Sleep Mode Ambient Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <BreathingCompanion />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <SleepMode />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Daily Surprise & Positive Affirmations Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <DailySurprise />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <PositiveAffirmations />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Wish Wall & Love Notes Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <WishWall />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <LoveNotes />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* 4. Flower Garden & 5. Love Letter Library */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <FlowerGarden />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <LoveLetterLibrary />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Memory Wall & Mood Music Interactive Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <MemoryWall />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <MoodMusic />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Rainy Window & Premium Music Player Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <RainyWindow />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <PremiumMusicPlayer />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Cozy Care Reminders Section */}
         <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
-          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          
             <CareReminders />
-          </Suspense>
+          
         </div>
 
         {/* Teddy Bear Interactive Reactions full-width Section */}
         <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
-          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          
             <TeddyReactions />
-          </Suspense>
+          
         </div>
 
         {/* 6. Mini Comfort Games */}
         <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/20 shadow-xl">
-          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          
             <MiniComfortGames onTriggerConfetti={onTriggerConfetti} />
-          </Suspense>
+          
         </div>
 
         {/* Cute Teddy Helper Companion & Care Streak Progress Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <CuteCompanion />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <CareStreak />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* 7. Mood Booster & 8. Relaxation Player */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <MoodBooster />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <RelaxationPlayer />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Badge Reward Collection Section */}
         <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
-          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          
             <RewardCollection />
-          </Suspense>
+          
         </div>
 
         {/* 9. Daily Comfort Checklist & 11. Surprise Gift Box */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <DailyComfortChecklist onUpdateComfortScore={(amt) => setComfortScore(prev => Math.max(0, Math.min(100, prev + amt)))} />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/20 shadow-xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <SurpriseGiftBox onTriggerConfetti={onTriggerConfetti} />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Daily Gift & Achievements Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <DailyGift />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <Achievements />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Kindness Wall Scrolling Ribbon (Part 5) */}
-        <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+        
           <KindnessWall />
-        </Suspense>
+        
 
         {/* Comfort Wheel & Gratitude Garden Dual Grid (Part 5) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <ComfortWheel />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <GratitudeGarden />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Comfort Meditation & Virtual Gift Shelf Dual Grid (Part 5) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <ComfortMeditation />
-            </Suspense>
+            
           </div>
           <div className="glass-card rounded-[40px] p-6 md:p-8 border border-white/10 shadow-2xl flex flex-col justify-between">
-            <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+            
               <VirtualGiftShelf />
-            </Suspense>
+            
           </div>
         </div>
 
         {/* Love Timeline Section (Part 5) */}
         <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/10 shadow-2xl">
-          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          
             <LoveTimeline />
-          </Suspense>
+          
         </div>
 
         {/* Final Thank You (Part 5) */}
-        <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+        
           <FinalThankYou />
-        </Suspense>
+        
 
         {/* 10. Message For Ruu */}
         <div className="glass-card rounded-[40px] p-6 md:p-10 border border-white/20 shadow-xl">
-          <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+          
             <MessageForRuu onTriggerConfetti={onTriggerConfetti} />
-          </Suspense>
+          
         </div>
 
         {/* 12. Final Section with Premium Quote */}
-        <Suspense fallback={<div className="h-40 w-full flex items-center justify-center text-pink-300/50 animate-pulse text-[10px] uppercase tracking-widest font-bold">Waking up components... 🌸</div>}>
+        
           <FinalSection />
-        </Suspense>
+        
 
       </div>
 
       {/* --- FLOATING MODALS & OVERLAYS INTERACTION CONTAINER --- */}
-      <AnimatePresence>
-        {/* Click Feedback overlays (e.g. Hug, Teddy bouncing messages) */}
+      {typeof document !== 'undefined' && createPortal(
+        <>
+          <AnimatePresence>
+            {/* Click Feedback overlays (e.g. Hug, Teddy bouncing messages) */}
         {activeOverlayType && activeOverlayMessage && (
           <motion.div 
             initial={{ opacity: 0 }}
@@ -2018,6 +2024,10 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
                 {activeOverlayType === 'chocolate' && '🍫'}
                 {activeOverlayType === 'flower' && '🌹'}
                 {activeOverlayType === 'cheer' && '✨'}
+                {activeOverlayType === 'hchoco' && '☕'}
+                {activeOverlayType === 'tea' && '🍵'}
+                {activeOverlayType === 'letter' && '💌'}
+                {activeOverlayType === 'love' && '❤️'}
               </div>
 
               <div className="space-y-2">
@@ -2027,6 +2037,10 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
                   {activeOverlayType === 'chocolate' && "Chocolate Opened! 🍫"}
                   {activeOverlayType === 'flower' && "Flower Shower Burst! 🌹"}
                   {activeOverlayType === 'cheer' && "A Note to Smile! ✨"}
+                  {activeOverlayType === 'hchoco' && "Hot Chocolate Ready! ☕"}
+                  {activeOverlayType === 'tea' && "Warm Tea Steeping! 🍵"}
+                  {activeOverlayType === 'letter' && "Love Letter Arrived! 💌"}
+                  {activeOverlayType === 'love' && "Endless Love Sent! ❤️"}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-zinc-300 leading-relaxed">
                   {activeOverlayMessage}
@@ -2042,7 +2056,7 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
                   }}
                   className="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-450 text-white rounded-xl text-xs font-extrabold uppercase tracking-widest shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
                 >
-                  Hug Received ❤️
+                  {activeOverlayType === 'hug' ? 'Hug Received ❤️' : 'Thank You ❤️'}
                 </button>
               </div>
             </motion.div>
@@ -2274,6 +2288,9 @@ export default function PeriodHub({ onTriggerConfetti }: { onTriggerConfetti?: (
           </div>
         )}
       </AnimatePresence>
+        </>,
+        document.body
+      )}
     </div>
   );
 }
