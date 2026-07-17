@@ -6,6 +6,7 @@ import { saveUnlockAttempt } from '../firebase';
 import BestieZone from './BestieZone';
 import BestiePasscodeLock from './BestiePasscodeLock';
 import FatherSurpriseZone from './FatherSurpriseZone';
+import TodaysMood from './TodaysMood';
 import PeriodHub from './PeriodHub';
 import PeriodHubLock from './PeriodHubLock';
 
@@ -409,6 +410,8 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
           Only {config.coupleNameTwo || 'Mystic Signal'} can unlock this secret space
         </p>
       </header>
+      
+      <TodaysMood />
 
       {/* Main Login / Lock Area - Side-by-side or stacked scrapbook */}
       <div className="flex-1 w-full max-w-5xl flex flex-col lg:flex-row gap-8 items-stretch justify-center relative z-10 mb-8">
