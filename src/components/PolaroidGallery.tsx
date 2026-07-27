@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MemoryPhoto } from '../types';
 import { Layout, Image as ImageIcon, Sparkles, Calendar, Plus, Trash2, SwitchCamera, Info } from 'lucide-react';
+import { logActivity } from '../lib/activityLogger';
 
 interface PolaroidGalleryProps {
   photos: MemoryPhoto[];
@@ -14,6 +15,10 @@ export default function PolaroidGallery({ photos, onAddTrigger, onRemovePhoto }:
   const [style, setStyle] = useState<GalleryStyle>('polaroid');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [flippedId, setFlippedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    logActivity("Opened Gallery", `Style: ${style}`);
+  }, [style]);
 
   // Quick toggle styles
   const stylesList: { id: GalleryStyle; label: string; icon: string }[] = [

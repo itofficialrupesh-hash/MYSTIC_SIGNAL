@@ -951,6 +951,7 @@ export function CareBox() {
                 key={c.id}
                 onClick={() => {
                   setSelectedCardId(c.id);
+                  supabaseService.activityLogs.log('viewed_care_card', `User viewed care card: ${c.label}`);
                   playComfortTone(400, 'sine', 0.1, 0.05);
                 }}
                 className={`p-3 rounded-2xl border text-left cursor-pointer transition-all ${
@@ -1090,6 +1091,7 @@ export function WishWall() {
 
     try {
       const added = await supabaseService.wishes.add(newWish);
+      supabaseService.activityLogs.log('released_wish', `User released a cosmic wish: "${wishInput.trim()}"`);
       setWishes(prev => {
         if (prev.some(w => w.id === added.id)) return prev;
         return [...prev, added];

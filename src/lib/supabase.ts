@@ -84,6 +84,14 @@ export interface AffirmationHistory {
   created_at: string;
 }
 
+export interface ActivityLog {
+  id: string;
+  user_id: string;
+  action: string;
+  details: string;
+  created_at: string;
+}
+
 // --- SECURE SANITIZATION & VALIDATION ENGINE ---
 export function sanitizeInput(str: string): string {
   if (!str) return '';
@@ -263,7 +271,8 @@ export const supabaseService = {
     },
     save: async (profile: Profile): Promise<Profile> => {
       if (isRealSupabase && supabase) {
-        await supabase.from('profiles').upsert(profile);
+        const { error } = await supabase.from('profiles').upsert(profile);
+        if (error) console.warn("Supabase profiles write issue:", error.message || error);
       }
       localStorage.setItem(`profile_${profile.id}`, JSON.stringify(profile));
       return profile;
@@ -305,8 +314,12 @@ export const supabaseService = {
       };
 
       if (isRealSupabase && supabase) {
-        await supabase.from('period_feedback').insert(record);
+        const { error } = await supabase.from('period_feedback').insert(record);
+        if (error) console.warn("Supabase period_feedback write issue:", error.message || error);
       }
+
+      // Track as general activity
+      supabaseService.activityLogs.log('submitted_feedback', `Message: "${cleanMessage}". Mood: ${feedback.mood}, Rating: ${feedback.rating}`);
 
       // Sync local
       try {
@@ -361,6 +374,9 @@ export const supabaseService = {
       if (isRealSupabase && supabase) {
         await supabase.from('love_notes').insert(record);
       }
+
+      // Track as general activity
+      supabaseService.activityLogs.log('added_love_note', `Note: "${record.note}"`);
 
       try {
         const local = localStorage.getItem('ruu_supabase_love_notes');
@@ -612,6 +628,271 @@ export const supabaseService = {
       }
       localStorage.setItem(`love_jar_count_${userId}`, count.toString());
       mockDb.notify('love_jar', 'UPDATE', { user_id: userId, count });
+    }
+  },
+
+  // --- ACTIVITY LOGS ---
+  activityLogs: {
+    get: async (): Promise<ActivityLog[]> => {
+      if (isRealSupabase && supabase) {
+        const { data, error } = await supabase.from('activity_logs').select('*').order('created_at', { ascending: false });
+        if (!error && data) return data;
+      }
+      try {
+        const local = localStorage.getItem('ruu_supabase_activity_logs');
+        return local ? JSON.parse(local) : [];
+      } catch (e) {
+        return [];
+      }
+    },
+    log: async (action: string, details: string = ''): Promise<ActivityLog> => {
+      let userId = 'guest_user_ruu';
+      try {
+        userId = mockDb.currentUser?.id || 'guest_user_ruu';
+      } catch (e) {}
+
+      // Try to parse details if it's JSON from logActivity
+      let logPayload: any = {};
+      try {
+        logPayload = JSON.parse(details);
+      } catch (e) {
+        logPayload = { details };
+      }
+
+      const record: ActivityLog = {
+        id: 'log_' + Math.random().toString(36).substr(2, 9),
+        user_id: userId,
+        action: logPayload.activity || action,
+        details: logPayload.details || details,
+        created_at: new Date().toISOString()
+      };
+      
+      if (isRealSupabase && supabase) {
+        // Construct standard database payload including page, browser, device, session_id
+        const dbPayload = {
+          ...record,
+          page: logPayload.page || '',
+          browser: logPayload.browser || '',
+          device: logPayload.device || '',
+          session_id: logPayload.session_id || ''
+        };
+        supabase.from('activity_logs').insert(dbPayload)
+          .then(
+            ({ error }) => {
+              if (error) {
+                console.warn("Supabase activity_logs write issue (falling back to local):", error.message || error);
+              }
+            },
+            (err) => {
+              console.warn("Supabase activity_logs unexpected failure:", err);
+            }
+          );
+      }
+      try {
+        const local = localStorage.getItem('ruu_supabase_activity_logs');
+        const list = local ? JSON.parse(local) : [];
+        const nextList = [record, ...list].slice(0, 500);
+        localStorage.setItem('ruu_supabase_activity_logs', JSON.stringify(nextList));
+      } catch (e) {}
+      
+      mockDb.notify('activity_logs', 'INSERT', record);
+      return record;
+    }
+  },
+
+  // --- NEW: PRIVATE REAL-TIME CHAT SERVICE ---
+  messages: {
+    get: async (): Promise<any[]> => {
+      if (isRealSupabase && supabase) {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .order('created_at', { ascending: true });
+        if (!error && data) return data;
+        if (error) {
+          console.warn("Supabase messages read issue (using local storage fallback):", error.message || error);
+          if (error.code === '42P01') {
+            (window as any)._supabaseMessagesTableMissing = true;
+          }
+        }
+      }
+      try {
+        const local = localStorage.getItem('ruu_supabase_messages') || '[]';
+        return JSON.parse(local);
+      } catch (e) {
+        return [];
+      }
+    },
+    add: async (msg: {
+      sender_id: string;
+      recipient_id: string;
+      text: string;
+      image_url?: string;
+      voice_url?: string;
+      reply_to_id?: string;
+    }): Promise<any> => {
+      const record = {
+        id: 'msg_' + Math.random().toString(36).substr(2, 9),
+        sender_id: msg.sender_id,
+        recipient_id: msg.recipient_id,
+        text: sanitizeInput(msg.text),
+        image_url: msg.image_url || '',
+        voice_url: msg.voice_url || '',
+        reply_to_id: msg.reply_to_id || '',
+        seen_status: 'sent',
+        edited: false,
+        created_at: new Date().toISOString()
+      };
+
+      if (isRealSupabase && supabase) {
+        const { error } = await supabase.from('messages').insert(record);
+        if (error) {
+          console.warn("Supabase messages write issue (falling back to local storage):", error.message || error);
+          if (error.code === '42P01') {
+            (window as any)._supabaseMessagesTableMissing = true;
+          }
+        }
+      }
+
+      try {
+        const local = localStorage.getItem('ruu_supabase_messages') || '[]';
+        const list = JSON.parse(local);
+        list.push(record);
+        localStorage.setItem('ruu_supabase_messages', JSON.stringify(list));
+      } catch (e) {}
+
+      mockDb.notify('messages', 'INSERT', record);
+      return record;
+    },
+    edit: async (id: string, newText: string): Promise<void> => {
+      const cleanText = sanitizeInput(newText);
+      if (isRealSupabase && supabase) {
+        await supabase.from('messages').update({ text: cleanText, edited: true }).eq('id', id);
+      }
+      try {
+        const local = localStorage.getItem('ruu_supabase_messages') || '[]';
+        let list = JSON.parse(local);
+        list = list.map((m: any) => m.id === id ? { ...m, text: cleanText, edited: true } : m);
+        localStorage.setItem('ruu_supabase_messages', JSON.stringify(list));
+      } catch (e) {}
+      mockDb.notify('messages', 'UPDATE', { id, text: cleanText, edited: true });
+    },
+    delete: async (id: string): Promise<void> => {
+      if (isRealSupabase && supabase) {
+        await supabase.from('messages').delete().eq('id', id);
+      }
+      try {
+        const local = localStorage.getItem('ruu_supabase_messages') || '[]';
+        let list = JSON.parse(local);
+        list = list.filter((m: any) => m.id !== id);
+        localStorage.setItem('ruu_supabase_messages', JSON.stringify(list));
+      } catch (e) {}
+      mockDb.notify('messages', 'DELETE', { id });
+    },
+    markAsSeen: async (messageIds: string[]): Promise<void> => {
+      if (messageIds.length === 0) return;
+      if (isRealSupabase && supabase) {
+        await supabase.from('messages').update({ seen_status: 'seen' }).in('id', messageIds);
+      }
+      try {
+        const local = localStorage.getItem('ruu_supabase_messages') || '[]';
+        let list = JSON.parse(local);
+        list = list.map((m: any) => messageIds.includes(m.id) ? { ...m, seen_status: 'seen' } : m);
+        localStorage.setItem('ruu_supabase_messages', JSON.stringify(list));
+      } catch (e) {}
+      messageIds.forEach(id => {
+        mockDb.notify('messages', 'UPDATE', { id, seen_status: 'seen' });
+      });
+    }
+  },
+
+  // --- NEW: REAL-TIME TYPING STATUS ---
+  typingStatus: {
+    set: async (userId: string, isTyping: boolean): Promise<void> => {
+      const record = { user_id: userId, is_typing: isTyping, last_updated: new Date().toISOString() };
+      if (isRealSupabase && supabase) {
+        await supabase.from('typing_status').upsert(record);
+      }
+      mockDb.notify('typing_status', 'UPDATE', record);
+    }
+  },
+
+  // --- NEW: PRESENCE AND ONLINE STATUS ---
+  presence: {
+    set: async (userId: string, status: 'online' | 'offline'): Promise<void> => {
+      const record = {
+        user_id: userId,
+        status,
+        last_seen: new Date().toISOString(),
+        browser: navigator.userAgent.substring(0, 100),
+        device: window.innerWidth < 768 ? 'Mobile' : 'Desktop'
+      };
+      if (isRealSupabase && supabase) {
+        await supabase.from('presence').upsert(record);
+      }
+      mockDb.notify('presence', 'UPDATE', record);
+    },
+    get: async (userId: string): Promise<any> => {
+      if (isRealSupabase && supabase) {
+        const { data, error } = await supabase.from('presence').select('*').eq('user_id', userId).single();
+        if (!error && data) return data;
+      }
+      return {
+        user_id: userId,
+        status: 'online',
+        last_seen: new Date().toISOString(),
+        browser: 'Chrome',
+        device: 'Mobile'
+      };
+    }
+  },
+
+  // --- NEW: NOTIFICATIONS SERVICE ---
+  notifications: {
+    get: async (): Promise<any[]> => {
+      if (isRealSupabase && supabase) {
+        const { data, error } = await supabase.from('notifications').select('*').order('created_at', { ascending: false });
+        if (!error && data) return data;
+      }
+      try {
+        const local = localStorage.getItem('ruu_supabase_notifications') || '[]';
+        return JSON.parse(local);
+      } catch (e) {
+        return [];
+      }
+    },
+    add: async (notif: { user_id: string; title: string; body: string }): Promise<any> => {
+      const record = {
+        id: 'notif_' + Math.random().toString(36).substr(2, 9),
+        user_id: notif.user_id,
+        title: notif.title,
+        body: notif.body,
+        read: false,
+        created_at: new Date().toISOString()
+      };
+      if (isRealSupabase && supabase) {
+        await supabase.from('notifications').insert(record);
+      }
+      try {
+        const local = localStorage.getItem('ruu_supabase_notifications') || '[]';
+        const list = JSON.parse(local);
+        list.unshift(record);
+        localStorage.setItem('ruu_supabase_notifications', JSON.stringify(list));
+      } catch (e) {}
+      mockDb.notify('notifications', 'INSERT', record);
+      return record;
+    },
+    markAsRead: async (id: string): Promise<void> => {
+      if (isRealSupabase && supabase) {
+        await supabase.from('notifications').update({ read: true }).eq('id', id);
+      }
+      try {
+        const local = localStorage.getItem('ruu_supabase_notifications') || '[]';
+        let list = JSON.parse(local);
+        list = list.map((n: any) => n.id === id ? { ...n, read: true } : n);
+        localStorage.setItem('ruu_supabase_notifications', JSON.stringify(list));
+      } catch (e) {}
+      mockDb.notify('notifications', 'UPDATE', { id, read: true });
     }
   },
 

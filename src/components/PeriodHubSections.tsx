@@ -51,6 +51,12 @@ export function VirtualLoveExperience({ onTriggerConfetti }: { onTriggerConfetti
   const handleTrigger = (id: string) => {
     setActiveExperience(id);
     playSynthTone(id === 'hug' ? 329.63 : 523.25, 'sine', 0.4, 0.1);
+    
+    const exp = experiences.find(e => e.id === id);
+    if (exp) {
+      supabaseService.activityLogs.log('virtual_experience', `User triggered virtual experience: ${exp.title}`);
+    }
+
     if (onTriggerConfetti && ['hug', 'kiss', 'flower', 'teddy'].includes(id)) {
       onTriggerConfetti();
     }
@@ -415,6 +421,8 @@ export function TeddyCollection() {
   const handleAction = (type: 'wave' | 'jump' | 'hug') => {
     setAnimationType(type);
     
+    supabaseService.activityLogs.log('teddy_interaction', `User interacted with teddy: ${type} on ${teddies[currentIndex].name}`);
+
     // Play specific melody for each action
     if (type === 'wave') {
       playSynthTone(587.33, 'sine', 0.15, 0.08);
@@ -881,6 +889,11 @@ export function MiniComfortGames({ onTriggerConfetti }: { onTriggerConfetti?: ()
     setActiveGame(id);
     playSynthTone(440, 'sine', 0.15);
     
+    const game = gamesList.find(g => g.id === id);
+    if (game) {
+      supabaseService.activityLogs.log('started_game', `User started playing: ${game.title}`);
+    }
+
     // Initializers
     if (id === 1) {
       setScore(0);

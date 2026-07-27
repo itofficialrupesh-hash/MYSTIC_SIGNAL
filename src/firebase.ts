@@ -45,16 +45,35 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     path
   };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // We keep this helper but we can choose to log without throwing when running in fallback mode.
+  return errInfo;
 }
 
 /**
- * Saves a lock screen unlock attempt to the Firebase Firestore database.
+ * Saves a lock screen unlock attempt to the Firebase Firestore database and LocalStorage fallback.
  * @param value The value entered by the visitor
  * @param isCorrect Whether the passcode/token was verified correctly
  */
 export async function saveUnlockAttempt(value: string, isCorrect: boolean) {
   const collectionPath = "unlock_attempts";
+  
+  // Save to LocalStorage fallback first
+  try {
+    const local = localStorage.getItem('ruu_unlock_attempts') || '[]';
+    const list = JSON.parse(local);
+    const newAttempt = {
+      id: 'attempt_' + Math.random().toString(36).substr(2, 9),
+      value: value,
+      isCorrect: isCorrect,
+      timestamp: new Date().toISOString()
+    };
+    list.unshift(newAttempt);
+    localStorage.setItem('ruu_unlock_attempts', JSON.stringify(list.slice(0, 100)));
+  } catch (e) {
+    console.error("Local storage failed", e);
+  }
+
+  // Attempt to save to cloud Firestore
   try {
     await addDoc(collection(db, collectionPath), {
       value: value,
@@ -62,15 +81,24 @@ export async function saveUnlockAttempt(value: string, isCorrect: boolean) {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    // Log the error in the required JSON format for diagnostics/platform verification, but do not crash the app
     handleFirestoreError(error, OperationType.CREATE, collectionPath);
   }
 }
 
 /**
- * Fetches the list of unlock attempts from Firestore, ordered by most recent first.
+ * Fetches the list of unlock attempts, falling back to LocalStorage if Firestore permissions are denied.
  */
 export async function getUnlockAttempts() {
   const collectionPath = "unlock_attempts";
+  
+  // Load LocalStorage fallback data
+  let fallbackAttempts: { id: string; value: string; isCorrect: boolean; timestamp: string }[] = [];
+  try {
+    const local = localStorage.getItem('ruu_unlock_attempts') || '[]';
+    fallbackAttempts = JSON.parse(local);
+  } catch (e) {}
+
   try {
     const q = query(
       collection(db, collectionPath),
@@ -88,18 +116,29 @@ export async function getUnlockAttempts() {
         timestamp: data.timestamp || ""
       });
     });
-    return attempts;
+    return attempts.length > 0 ? attempts : fallbackAttempts;
   } catch (error) {
+    // Log the error in the required format for diagnostics, and return local fallback attempts
     handleFirestoreError(error, OperationType.GET, collectionPath);
-    return [];
+    return fallbackAttempts;
   }
 }
 
 /**
- * Deletes a single unlock attempt log entry from Firestore.
+ * Deletes a single unlock attempt log entry from Firestore and LocalStorage fallback.
  */
 export async function deleteUnlockAttempt(id: string) {
   const collectionPath = "unlock_attempts";
+  
+  // Delete from LocalStorage fallback
+  try {
+    const local = localStorage.getItem('ruu_unlock_attempts') || '[]';
+    let list = JSON.parse(local);
+    list = list.filter((a: any) => a.id !== id);
+    localStorage.setItem('ruu_unlock_attempts', JSON.stringify(list));
+  } catch (e) {}
+
+  // Delete from cloud Firestore
   try {
     await deleteDoc(doc(db, collectionPath, id));
   } catch (error) {

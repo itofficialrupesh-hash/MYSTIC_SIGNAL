@@ -3,12 +3,16 @@ import { Lock, Unlock, HelpCircle, Heart, Star, Compass, Gift, Calendar, Clock, 
 import { LoveConfig } from '../types';
 import LovelyLogo from './LovelyLogo';
 import { saveUnlockAttempt } from '../firebase';
+import { supabaseService } from '../lib/supabase';
 import BestieZone from './BestieZone';
 import BestiePasscodeLock from './BestiePasscodeLock';
 import FatherSurpriseZone from './FatherSurpriseZone';
 import TodaysMood from './TodaysMood';
 import PeriodHub from './PeriodHub';
 import PeriodHubLock from './PeriodHubLock';
+import PrivateChat from './PrivateChat';
+import PrivateChatLock from './PrivateChatLock';
+import VirtualHug from './VirtualHug';
 
 interface LandingPageProps {
   config: LoveConfig;
@@ -48,6 +52,16 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
   const [isPeriodHubUnlocked, setIsPeriodHubUnlocked] = useState<boolean>(() => {
     try {
       return localStorage.getItem('is_period_hub_unlocked') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+  
+  // Real-Time Private Chat states
+  const [showChatModal, setShowChatModal] = useState(false);
+  const [isChatUnlocked, setIsChatUnlocked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('is_chat_unlocked') === 'true';
     } catch (e) {
       return false;
     }
@@ -592,6 +606,7 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
               <BestiePasscodeLock 
                 onUnlockSuccess={() => {
                   setBestieUnlocked(true);
+                  supabaseService.activityLogs.log('unlocked_bestie_zone', 'User successfully unlocked the Bestie Zone.');
                   onTriggerConfetti();
                 }}
                 onTriggerConfetti={onTriggerConfetti}
@@ -765,7 +780,48 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
                       </div>
                     </div>
                     <div className="w-10 h-10 bg-slate-950 border border-pink-500/30 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-md relative z-10">
-                      <Lock size={14} className="text-pink-400" />
+                      {isPeriodHubUnlocked ? (
+                        <Unlock size={14} className="text-emerald-400" />
+                      ) : (
+                        <Lock size={14} className="text-pink-400" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card 8: Real-Time Private Chat Room (spans 3 - Full Width!) */}
+                  <div 
+                    onClick={() => {
+                      setShowChatModal(true);
+                      try {
+                        supabaseService.activityLogs.log('clicked_chat_card', 'User clicked Private Chat card on main landing page');
+                      } catch (e) {}
+                    }}
+                    className="md:col-span-3 cursor-pointer bg-gradient-to-r from-slate-950/40 via-pink-950/30 to-[#0d071b] border border-pink-500/20 rounded-[28px] p-5 hover:border-pink-500/50 hover:bg-[#0c0a1a]/80 transition-all duration-300 flex flex-col md:flex-row items-center justify-between min-h-[105px] gap-4 px-6 md:px-8 shadow-[0_4px_25px_rgba(244,63,94,0.08)] relative group overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-radial-gradient from-pink-500/5 via-transparent to-transparent opacity-60 pointer-events-none" />
+                    {/* Floating icons in background */}
+                    <div className="absolute top-2 right-12 text-pink-500/10 group-hover:text-pink-500/20 text-xs font-mono select-none">💬 real-time private chat</div>
+                    <div className="flex items-center gap-4 relative z-10">
+                      <span className="text-4xl group-hover:scale-110 group-hover:rotate-12 transition-transform duration-300 select-none">💬</span>
+                      <div className="text-left">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[9px] font-black text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20 uppercase tracking-widest">Live Connections</span>
+                          <span className="text-[9px] font-bold text-pink-300/80 bg-pink-500/10 px-2 py-0.5 rounded-full border border-pink-500/20 tracking-wider">Passcode: Ruutanish</span>
+                        </div>
+                        <h4 className="font-serif text-sm md:text-base font-black text-transparent bg-gradient-to-r from-pink-300 via-rose-300 to-indigo-300 bg-clip-text tracking-wide mt-1.5 leading-tight">
+                          💖 Real-Time Private Chat Room 🔒
+                        </h4>
+                        <p className="text-[10px] text-zinc-300 mt-1 max-w-[480px] leading-relaxed font-semibold">
+                          Talk to Ruu directly in our private chat room with live text, sweet imagery, voice recordings, typing indicators, and beautiful live status. Click to unlock!
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-10 h-10 bg-slate-950 border border-pink-500/30 rounded-full flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-md relative z-10">
+                      {isChatUnlocked ? (
+                        <Unlock size={14} className="text-emerald-400 animate-pulse" />
+                      ) : (
+                        <Lock size={14} className="text-pink-400" />
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1245,6 +1301,7 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
                 <PeriodHubLock 
                   onUnlockSuccess={() => {
                     setIsPeriodHubUnlocked(true);
+                    supabaseService.activityLogs.log('unlocked_period_hub', 'User successfully unlocked the Period Hub.');
                     try {
                       localStorage.setItem('is_period_hub_unlocked', 'true');
                     } catch (e) {}
@@ -1273,6 +1330,59 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti }: L
             )}
           </div>
         </div>
+        </>
+      )}
+
+      {/* ─── REAL-TIME PRIVATE CHAT POPUP OVERLAY ─── */}
+      {showChatModal && (
+        <>
+          <div className="fixed inset-0 z-[40] bg-slate-950/95 backdrop-blur-lg animate-fade-in pointer-events-none" />
+          <div className="fixed inset-0 z-50 overflow-y-auto flex flex-col justify-start items-center p-4 md:p-8 animate-fade-in">
+            {/* Floating close button at the very top right */}
+            <button 
+              onClick={() => setShowChatModal(false)}
+              className="fixed top-4 right-4 md:top-6 md:right-6 bg-slate-900/90 hover:bg-pink-500 hover:text-white text-zinc-300 rounded-full p-2.5 cursor-pointer transition-all z-[60] border border-pink-500/30 hover:scale-105 shadow-2xl flex items-center justify-center"
+              title="Close Chat Room"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="w-full max-w-4xl mx-auto pt-12 pb-8 relative z-10">
+              {!isChatUnlocked ? (
+                <div className="max-w-md mx-auto pt-4 md:pt-12">
+                  <PrivateChatLock 
+                    onUnlockSuccess={() => {
+                      setIsChatUnlocked(true);
+                      try {
+                        supabaseService.activityLogs.log('unlocked_private_chat', 'User successfully unlocked the Private Chat Room.');
+                        localStorage.setItem('is_chat_unlocked', 'true');
+                      } catch (e) {}
+                    }}
+                    onTriggerConfetti={onTriggerConfetti}
+                  />
+                </div>
+              ) : (
+                <div className="w-full space-y-6">
+                  <div className="flex flex-col items-center text-center space-y-2 mb-2 select-none">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-500/15 border border-pink-500/30 rounded-full text-pink-300 font-extrabold text-[10px] uppercase tracking-widest animate-pulse">
+                      💬 Real-Time Private Chat Active 💬
+                    </div>
+                    <h2 className="font-serif text-2xl md:text-3xl font-black text-transparent bg-gradient-to-r from-pink-300 via-rose-300 to-indigo-300 bg-clip-text uppercase tracking-wider">
+                      💖 Secret Chat Room
+                    </h2>
+                    <p className="text-xs text-zinc-400 font-medium max-w-md">
+                      Our secret, real-time message board. Speak your heart, send voicemails, images, and feel my presence right beside you.
+                    </p>
+                  </div>
+
+                  <div className="bg-[#110a1f]/80 border border-pink-500/20 rounded-[32px] p-2 md:p-4 shadow-2xl relative overflow-hidden text-zinc-850 dark:text-white">
+                    <PrivateChat onTriggerConfetti={onTriggerConfetti} />
+                  </div>
+                  <VirtualHug onTriggerConfetti={onTriggerConfetti} />
+                </div>
+              )}
+            </div>
+          </div>
         </>
       )}
 

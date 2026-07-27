@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, Save, RotateCcw, Image, Plus, Trash2, 
   Settings, Heart, Sparkles, Sliders, Music, 
-  Download, Upload, Check, HelpCircle, Lock
+  Download, Upload, Check, HelpCircle, Lock, Activity, Database
 } from 'lucide-react';
 import { LoveConfig, MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter } from '../types';
 import { getUnlockAttempts, deleteUnlockAttempt } from '../firebase';
+import { supabaseService, ActivityLog, isRealSupabase } from '../lib/supabase';
 
 interface SecretAdminProps {
   config: LoveConfig;
@@ -46,12 +47,94 @@ export default function SecretAdmin({
   const [localLetters, setLocalLetters] = useState<OpenWhenLetter[]>([...letters]);
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'basics' | 'photos' | 'story' | 'letters' | 'promises' | 'attempts'>('basics');
+  const [activeTab, setActiveTab] = useState<'basics' | 'photos' | 'story' | 'letters' | 'promises' | 'attempts' | 'activities' | 'supabase' | 'analytics'>('basics');
+  
+  // Real-time Activities State
+  const [activities, setActivities] = useState<ActivityLog[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
   
   // Custom Attempts state
   const [attempts, setAttempts] = useState<{ id: string; value: string; isCorrect: boolean; timestamp: string }[]>([]);
   const [loadingAttempts, setLoadingAttempts] = useState(false);
   const [attemptsError, setAttemptsError] = useState<string | null>(null);
+
+  // Supabase Database diagnostics and stats
+  const [dbStats, setDbStats] = useState({
+    feedbackCount: 0,
+    loveNotesCount: 0,
+    wishesCount: 0,
+    activitiesCount: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [revealAnonKey, setRevealAnonKey] = useState(false);
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
+  const [diagnosticRunning, setDiagnosticRunning] = useState(false);
+  const [diagnosticMsg, setDiagnosticMsg] = useState<string | null>(null);
+
+  const [visibleActivitiesCount, setVisibleActivitiesCount] = useState(50);
+  const [visibleAttemptsCount, setVisibleAttemptsCount] = useState(50);
+
+  // Memoize heavy activity analytics & parsing to avoid thread lagging
+  const analyticsData = useMemo(() => {
+    let hugsCount = 0;
+    let lettersCount = 0;
+    let musicCount = 0;
+
+    const deviceCounts: Record<string, number> = {};
+    const browserCounts: Record<string, number> = {};
+
+    activities.forEach(a => {
+      const actionLower = a.action ? a.action.toLowerCase() : '';
+      if (actionLower.includes('hug')) hugsCount++;
+      if (actionLower.includes('letter') || actionLower.includes('open')) lettersCount++;
+      if (actionLower.includes('music')) musicCount++;
+
+      let device = 'Desktop';
+      let browser = 'Google Chrome';
+      
+      const detailsStr = a.details || '';
+      if (detailsStr.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(detailsStr);
+          device = parsed.device || 'Desktop';
+          browser = parsed.browser || 'Google Chrome';
+        } catch (e) {
+          if (detailsStr.toLowerCase().includes('mobile')) {
+            device = 'Mobile';
+          }
+        }
+      } else {
+        // Not a JSON string, check heuristic
+        const detLower = detailsStr.toLowerCase();
+        if (detLower.includes('mobile') || detLower.includes('phone') || detLower.includes('android') || detLower.includes('iphone')) {
+          device = 'Mobile';
+        }
+        if (detLower.includes('safari')) {
+          browser = 'Safari';
+        } else if (detLower.includes('firefox')) {
+          browser = 'Firefox';
+        } else if (detLower.includes('chrome')) {
+          browser = 'Google Chrome';
+        } else if (detLower.includes('edge')) {
+          browser = 'Microsoft Edge';
+        }
+      }
+
+      deviceCounts[device] = (deviceCounts[device] || 0) + 1;
+      browserCounts[browser] = (browserCounts[browser] || 0) + 1;
+    });
+
+    const totalDevices = activities.length || 1;
+
+    return {
+      hugsCount,
+      lettersCount,
+      musicCount,
+      deviceCounts,
+      browserCounts,
+      totalDevices
+    };
+  }, [activities]);
 
   const fetchAttempts = async () => {
     setLoadingAttempts(true);
@@ -67,10 +150,77 @@ export default function SecretAdmin({
     }
   };
 
+  const fetchSupabaseStats = async () => {
+    setStatsLoading(true);
+    try {
+      const [feedbacks, notes, wishes, logs] = await Promise.all([
+        supabaseService.feedback.get().catch(() => []),
+        supabaseService.loveNotes.get().catch(() => []),
+        supabaseService.wishes.get().catch(() => []),
+        supabaseService.activityLogs.get().catch(() => [])
+      ]);
+      setDbStats({
+        feedbackCount: feedbacks.length,
+        loveNotesCount: notes.length,
+        wishesCount: wishes.length,
+        activitiesCount: logs.length
+      });
+    } catch (e) {
+      console.error("Failed to fetch Supabase stats", e);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  const runDiagnostic = async () => {
+    setDiagnosticRunning(true);
+    setDiagnosticMsg("Pinging Supabase REST Endpoints...");
+    setLatencyMs(null);
+    const start = Date.now();
+    try {
+      await supabaseService.activityLogs.get();
+      const end = Date.now();
+      setLatencyMs(end - start);
+      setDiagnosticMsg("Diagnostic Complete: Connection is healthy! Cloud read/write queries are responsive.");
+    } catch (err: any) {
+      setDiagnosticMsg(`Diagnostic Failed: ${err.message || 'Check your environment variables or connection status.'}`);
+    } finally {
+      setDiagnosticRunning(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'attempts') {
       fetchAttempts();
     }
+    if (activeTab === 'activities' || activeTab === 'analytics') {
+      fetchActivities();
+    }
+    if (activeTab === 'supabase') {
+      fetchSupabaseStats();
+    }
+  }, [activeTab]);
+
+  const fetchActivities = async () => {
+    setActivitiesLoading(true);
+    try {
+      const logs = await supabaseService.activityLogs.get();
+      setActivities(logs);
+    } catch (e) {
+      console.error('Failed to load activities', e);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab !== 'activities' && activeTab !== 'analytics') return;
+    const unsubscribe = supabaseService.subscribe('activity_logs', (payload) => {
+      if (payload.eventType === 'INSERT') {
+        setActivities(prev => [payload.new, ...prev]);
+      }
+    });
+    return () => unsubscribe();
   }, [activeTab]);
 
   const handleDeleteAttempt = async (id: string) => {
@@ -280,6 +430,18 @@ export default function SecretAdmin({
               </div>
             </div>
 
+            <div className={`px-3 py-2 rounded-xl border flex flex-col gap-1 ${isRealSupabase ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
+              <div className="flex items-center gap-1.5">
+                <div className={`w-2 h-2 rounded-full ${isRealSupabase ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                <span className={`text-[10px] font-bold ${isRealSupabase ? 'text-emerald-700' : 'text-amber-700'}`}>
+                  {isRealSupabase ? 'Supabase Connected' : 'Local Storage Mode'}
+                </span>
+              </div>
+              <p className={`text-[9px] ${isRealSupabase ? 'text-emerald-600/80' : 'text-amber-600/80'}`}>
+                {isRealSupabase ? 'Live real-time sync is active across devices.' : 'Live DB not connected. Data saves only to this browser.'}
+              </p>
+            </div>
+
             <nav className="flex md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
               <button
                 type="button"
@@ -341,6 +503,36 @@ export default function SecretAdmin({
                 <Lock size={14} className="text-pink-500" />
                 <span>Unlock Attempts Log 🔐</span>
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('activities')}
+                className={`px-4 py-2 text-xs font-bold rounded-xl whitespace-nowrap text-left transition-colors cursor-pointer flex items-center gap-2 ${
+                  activeTab === 'activities' ? 'bg-pink-100/60 text-pink-600' : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                <Activity size={14} className="text-pink-500" />
+                <span>Real-Time Activities 🚀</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('analytics')}
+                className={`px-4 py-2 text-xs font-bold rounded-xl whitespace-nowrap text-left transition-colors cursor-pointer flex items-center gap-2 ${
+                  activeTab === 'analytics' ? 'bg-pink-100/60 text-pink-600 animate-pulse font-black' : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                <Sparkles size={14} className="text-rose-500 animate-spin-slow" />
+                <span>Love Analytics Hub 💖</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('supabase')}
+                className={`px-4 py-2 text-xs font-bold rounded-xl whitespace-nowrap text-left transition-colors cursor-pointer flex items-center gap-2 ${
+                  activeTab === 'supabase' ? 'bg-emerald-100/60 text-emerald-700 font-extrabold' : 'text-gray-500 hover:bg-gray-100'
+                }`}
+              >
+                <Database size={14} className="text-emerald-500 animate-pulse" />
+                <span>Supabase Database ⚡</span>
+              </button>
             </nav>
           </div>
 
@@ -378,9 +570,16 @@ export default function SecretAdmin({
                 {activeTab === 'letters' && 'Open When heart-mail'}
                 {activeTab === 'promises' && 'Lifetime Promises list'}
                 {activeTab === 'attempts' && 'Visitor Lock Passcode Attempts 🔐'}
+                {activeTab === 'activities' && 'Real-Time Activities Log 🚀'}
+                {activeTab === 'analytics' && 'Love Analytics Hub 💖'}
+                {activeTab === 'supabase' && 'Supabase Cloud Database Center ⚡'}
               </h2>
               <p className="text-xs text-gray-400">
-                {activeTab === 'attempts' ? 'Monitor password entry history live from Firestore database' : 'Everything edits in real time locally'}
+                {activeTab === 'attempts' ? 'Monitor password entry history live from Firestore database' : 
+                 activeTab === 'activities' ? 'Monitor her real-time mood, interactions, and actions' : 
+                 activeTab === 'analytics' ? 'Dashboard showcasing interaction trends, device categories, and metrics' :
+                 activeTab === 'supabase' ? 'Inspect live backend sync, schemas, table records & diagnostic latency' :
+                 'Everything edits in real time locally'}
               </p>
             </div>
             <button 
@@ -910,7 +1109,7 @@ export default function SecretAdmin({
                       <span className="col-span-1 text-right">Delete</span>
                     </div>
                     <div className="divide-y divide-slate-100 max-h-[400px] overflow-y-auto">
-                      {attempts.map((atm) => (
+                      {attempts.slice(0, visibleAttemptsCount).map((atm) => (
                         <div key={atm.id} className="px-4 py-3.5 text-xs grid grid-cols-12 gap-2 items-center hover:bg-slate-50/50 transition-colors">
                           <span className="col-span-3 flex items-center gap-1.5">
                             {atm.isCorrect ? (
@@ -950,8 +1149,537 @@ export default function SecretAdmin({
                         </div>
                       ))}
                     </div>
+                    {attempts.length > visibleAttemptsCount && (
+                      <div className="p-3 text-center bg-slate-50 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setVisibleAttemptsCount(prev => prev + 50)}
+                          className="px-4 py-1.5 bg-white border border-slate-200 hover:border-pink-300 hover:text-pink-600 rounded-xl text-[11px] font-bold text-gray-600 cursor-pointer shadow-sm transition-all"
+                        >
+                          Load More Security Logs (+50)
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* TAB: ACTIVITIES */}
+            {activeTab === 'activities' && (
+              <div className="space-y-6 animate-fade-in text-gray-800">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl gap-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-700">Real-Time Interaction Feed</h4>
+                    <p className="text-[10px] text-gray-400 font-medium">See what she clicks, unlocks, and reactions she gives.</p>
+                  </div>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={fetchActivities}
+                      disabled={activitiesLoading}
+                      className="px-3 py-1.5 bg-pink-100/60 hover:bg-pink-100 text-pink-600 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      <RotateCcw size={12} className={activitiesLoading ? "animate-spin" : ""} />
+                      <span>{activitiesLoading ? "Loading..." : "Refresh Live"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {activitiesLoading && activities.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2">
+                    <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+                    <span className="text-xs text-gray-400 font-medium font-sans animate-pulse">Fetching live activities...</span>
+                  </div>
+                ) : activities.length === 0 ? (
+                  <div className="p-8 text-center bg-gray-50/50 border border-dashed border-gray-100 rounded-3xl space-y-2">
+                    <div className="text-2xl select-none">📭</div>
+                    <h5 className="text-xs font-bold text-gray-700">No activities logged yet</h5>
+                    <p className="text-[11px] text-gray-400 max-w-xs mx-auto">
+                      Interactions will appear here automatically when the app is used.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="border border-slate-100 rounded-2xl overflow-hidden divide-y divide-slate-50 bg-white">
+                    <div className="px-4 py-2.5 bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest grid grid-cols-12 gap-2 select-none">
+                      <span className="col-span-3">Time</span>
+                      <span className="col-span-3">Action</span>
+                      <span className="col-span-6">Details</span>
+                    </div>
+                    <div className="divide-y divide-slate-100 max-h-[400px] overflow-y-auto">
+                      {activities.slice(0, visibleActivitiesCount).map((act) => (
+                        <div key={act.id} className="px-4 py-3.5 text-xs grid grid-cols-12 gap-2 items-center hover:bg-slate-50/50 transition-colors">
+                          <span className="col-span-3 text-[11px] text-gray-400 font-mono">
+                            {new Date(act.created_at).toLocaleString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit'
+                            })}
+                          </span>
+                          <span className="col-span-3 font-mono font-bold text-pink-700 bg-pink-50/60 px-2.5 py-0.5 rounded-lg w-max text-[10px] border border-pink-100/50">
+                            {act.action}
+                          </span>
+                          <span className="col-span-6 text-[11px] text-gray-600">
+                            {act.details}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    {activities.length > visibleActivitiesCount && (
+                      <div className="p-3 text-center bg-slate-50 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={() => setVisibleActivitiesCount(prev => prev + 50)}
+                          className="px-4 py-1.5 bg-white border border-slate-200 hover:border-pink-300 hover:text-pink-600 rounded-xl text-[11px] font-bold text-gray-600 cursor-pointer shadow-sm transition-all"
+                        >
+                          Load More Live Activities (+50)
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB: LOVE ANALYTICS HUB */}
+            {activeTab === 'analytics' && (
+              <div className="space-y-6 animate-fade-in text-gray-800">
+                {/* Metric Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-4 bg-pink-50/50 border border-pink-100 rounded-2xl text-center space-y-1 hover:shadow-md transition-shadow">
+                    <span className="text-xl">✨</span>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Actions</p>
+                    <h3 className="text-xl font-black text-pink-600">{activities.length}</h3>
+                  </div>
+                  <div className="p-4 bg-rose-50/50 border border-rose-100 rounded-2xl text-center space-y-1 hover:shadow-md transition-shadow">
+                    <span className="text-xl">🫂</span>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Hugs Shared</p>
+                    <h3 className="text-xl font-black text-rose-600">{analyticsData.hugsCount}</h3>
+                  </div>
+                  <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl text-center space-y-1 hover:shadow-md transition-shadow">
+                    <span className="text-xl">📬</span>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Letters Read</p>
+                    <h3 className="text-xl font-black text-indigo-600">{analyticsData.lettersCount}</h3>
+                  </div>
+                  <div className="p-4 bg-purple-50/50 border border-purple-100 rounded-2xl text-center space-y-1 hover:shadow-md transition-shadow">
+                    <span className="text-xl">🎵</span>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Music Plays</p>
+                    <h3 className="text-xl font-black text-purple-600">{analyticsData.musicCount}</h3>
+                  </div>
+                </div>
+
+                {/* Secondary row for device breakdown & live timeline analysis */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left card: Device and Browser stats breakdown */}
+                  <div className="p-5 bg-white border border-slate-100 rounded-2xl space-y-4 shadow-xs">
+                    <h4 className="text-xs font-bold text-gray-700 uppercase tracking-widest flex items-center gap-1.5">
+                      <span>📱 Device & Browser Share</span>
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      {/* Device Breakdown */}
+                      <div className="space-y-2">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase">Device Categories</span>
+                        <div className="h-2 rounded-full overflow-hidden flex bg-gray-100">
+                          {Object.entries(analyticsData.deviceCounts).map(([dev, count], i) => {
+                            const pct = Math.round(((count as number) / analyticsData.totalDevices) * 100);
+                            const bg = i === 0 ? 'bg-pink-500' : i === 1 ? 'bg-purple-500' : 'bg-rose-400';
+                            return (
+                              <div 
+                                key={dev} 
+                                className={`${bg} h-full`} 
+                                style={{ width: `${pct}%` }} 
+                                title={`${dev}: ${pct}%`}
+                              />
+                            );
+                          })}
+                        </div>
+                        <div className="flex flex-wrap gap-3 pt-1">
+                          {Object.entries(analyticsData.deviceCounts).map(([dev, count], i) => {
+                            const pct = Math.round(((count as number) / analyticsData.totalDevices) * 100);
+                            const dot = i === 0 ? 'bg-pink-500' : i === 1 ? 'bg-purple-500' : 'bg-rose-400';
+                            return (
+                              <div key={dev} className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500">
+                                <span className={`w-2 h-2 rounded-full ${dot}`} />
+                                <span>{dev} ({pct}%)</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Browser Breakdown */}
+                      <div className="space-y-2">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase">Browser Breakdown</span>
+                        <div className="space-y-1.5">
+                          {Object.entries(analyticsData.browserCounts).slice(0, 3).map(([browser, count]) => {
+                            const pct = Math.round(((count as number) / analyticsData.totalDevices) * 100);
+                            return (
+                              <div key={browser} className="space-y-1">
+                                <div className="flex justify-between text-[10px] font-bold text-gray-500">
+                                  <span>{browser}</span>
+                                  <span>{pct}%</span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                                  <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${pct}%` }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right card: Last Seen / Active Status information */}
+                  <div className="p-5 bg-white border border-slate-100 rounded-2xl space-y-4 shadow-xs">
+                    <h4 className="text-xs font-bold text-gray-700 uppercase tracking-widest flex items-center gap-1.5">
+                      <span>💗 Active Engagement Metrics</span>
+                    </h4>
+                    <div className="space-y-3 text-xs text-gray-600 font-medium">
+                      <div className="flex justify-between py-2 border-b border-slate-50">
+                        <span className="text-gray-400 font-bold">Latest Clicked Activity</span>
+                        <span className="font-mono text-pink-600 font-bold truncate max-w-[200px]">
+                          {activities[0]?.action || 'None logged yet'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-slate-50">
+                        <span className="text-gray-400 font-bold">Last Interaction Date</span>
+                        <span className="font-mono text-gray-700">
+                          {activities[0] ? new Date(activities[0].created_at).toLocaleDateString() : 'Never'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b border-slate-50">
+                        <span className="text-gray-400 font-bold">Total Unique Sessions</span>
+                        <span className="font-mono font-bold text-indigo-600">
+                          {(() => {
+                            const sessions = new Set();
+                            activities.forEach(a => {
+                              try {
+                                const p = JSON.parse(a.details);
+                                if (p.session_id) sessions.add(p.session_id);
+                              } catch(e) {}
+                            });
+                            return Math.max(sessions.size, 1);
+                          })()}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-gray-400 italic pt-1 leading-normal">
+                        Every single action performed by Her is logged, parsed, and safely compiled to present these dynamic charts to you, Ruu.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: SUPABASE DETAILS */}
+            {activeTab === 'supabase' && (
+              <div className="space-y-6 animate-fade-in text-gray-800 p-1">
+                {/* Connection Banner */}
+                <div className={`p-5 rounded-2xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${isRealSupabase ? 'bg-emerald-50/60 border-emerald-100' : 'bg-amber-50/60 border-amber-100'}`}>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${isRealSupabase ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                      <h4 className={`text-sm font-bold ${isRealSupabase ? 'text-emerald-800' : 'text-amber-800'}`}>
+                        {isRealSupabase ? 'Supabase Live Connected' : 'Supabase Local Fallback Mode'}
+                      </h4>
+                    </div>
+                    <p className="text-xs text-slate-500 max-w-xl">
+                      {isRealSupabase 
+                        ? 'All interactive features are synchronizing in real-time. Changes you make here will instantly reflect on your girlfriend’s device across the world!'
+                        : 'No active Supabase keys detected in `.env`. The application is currently running in a robust, high-fidelity Local Storage sandbox. Perfect for secure, local testing.'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={runDiagnostic}
+                    disabled={diagnosticRunning}
+                    className="px-4 py-2 bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 text-xs font-bold rounded-xl whitespace-nowrap cursor-pointer transition-all self-stretch md:self-auto text-center"
+                  >
+                    {diagnosticRunning ? 'Running Test...' : 'Run Connection Test'}
+                  </button>
+                </div>
+
+                {/* Diagnostics Status output */}
+                {(diagnosticMsg || latencyMs !== null) && (
+                  <div className={`p-4 rounded-xl border text-xs font-mono flex flex-col gap-1.5 ${diagnosticMsg?.includes('Failed') ? 'bg-red-50 border-red-100 text-red-700' : 'bg-slate-50 border-slate-100 text-slate-700'}`}>
+                    <div className="flex justify-between font-bold">
+                      <span>Diagnostic Console Output:</span>
+                      {latencyMs !== null && <span className="text-emerald-600">Response Latency: {latencyMs}ms</span>}
+                    </div>
+                    <p className="text-[11px] leading-relaxed">{diagnosticMsg}</p>
+                  </div>
+                )}
+
+                {/* Database Tables and Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Table Stats Card */}
+                  <div className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4 shadow-sm">
+                    <h4 className="text-xs font-bold text-gray-700 tracking-wider uppercase select-none">Synced Database Tables</h4>
+                    
+                    {statsLoading ? (
+                      <div className="flex justify-center py-10">
+                        <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                          <span className="text-xs text-gray-600 font-medium">💬 Messages for Ruu (`period_feedback`)</span>
+                          <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">{dbStats.feedbackCount} rows</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                          <span className="text-xs text-gray-600 font-medium">💖 Custom Love Notes (`love_notes`)</span>
+                          <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">{dbStats.loveNotesCount} rows</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                          <span className="text-xs text-gray-600 font-medium">⭐ Cosmic Star Wishes (`cosmic_wishes`)</span>
+                          <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">{dbStats.wishesCount} rows</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-xs text-gray-600 font-medium">🚀 Interaction Logs (`activity_logs`)</span>
+                          <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">{dbStats.activitiesCount} rows</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Supabase Connection Details */}
+                  <div className="bg-white border border-slate-100 rounded-2xl p-5 space-y-4 shadow-sm">
+                    <h4 className="text-xs font-bold text-gray-700 tracking-wider uppercase select-none">Connection Parameters</h4>
+                    
+                    <div className="space-y-3.5 text-xs">
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-gray-400 font-bold uppercase">Supabase Endpoint URL</label>
+                        <div className="p-2.5 bg-slate-50 rounded-xl font-mono text-[10px] text-slate-600 break-all select-all">
+                          {import.meta.env.VITE_SUPABASE_URL || 'Not Configured (Using Mock DB)'}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center">
+                          <label className="text-[10px] text-gray-400 font-bold uppercase">Supabase Anon Public API Key</label>
+                          {import.meta.env.VITE_SUPABASE_ANON_KEY && (
+                            <button
+                              type="button"
+                              onClick={() => setRevealAnonKey(!revealAnonKey)}
+                              className="text-[10px] font-black text-pink-600 hover:text-pink-700 cursor-pointer"
+                            >
+                              {revealAnonKey ? 'Hide' : 'Reveal Key'}
+                            </button>
+                          )}
+                        </div>
+                        <div className="p-2.5 bg-slate-50 rounded-xl font-mono text-[10px] text-slate-600 break-all select-all">
+                          {import.meta.env.VITE_SUPABASE_ANON_KEY 
+                            ? (revealAnonKey ? import.meta.env.VITE_SUPABASE_ANON_KEY : '•'.repeat(50) + ' [HIDDEN]') 
+                            : 'Not Configured (Using Mock DB)'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Helpful Config Hints */}
+                <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-2">
+                  <h5 className="text-xs font-bold text-slate-700">How to migrate to live Supabase database?</h5>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    1. Create a free account at <a href="https://supabase.com" target="_blank" rel="noreferrer" className="text-pink-600 underline font-semibold">supabase.com</a> and create a new project.<br />
+                    2. Copy your **Project URL** and **API Anon Key** from your project settings.<br />
+                    3. Click **Settings** in the top-right of your AI Studio Workspace, add two variables: **`VITE_SUPABASE_URL`** and **`VITE_SUPABASE_ANON_KEY`** with your credentials, and restart the server!<br />
+                    4. This application will automatically detect those keys and establish a live cloud database.
+                  </p>
+
+                  <div className="pt-2">
+                    <details className="group border border-slate-200/60 bg-white rounded-xl overflow-hidden">
+                      <summary className="flex items-center justify-between p-3 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer select-none">
+                        <span>📋 View COMPLETE SQL Schema for ALL Tables (Supabase SQL Editor)</span>
+                        <span className="text-[10px] text-pink-500 group-open:rotate-180 transition-transform">▼</span>
+                      </summary>
+                      <div className="p-3 border-t border-slate-100 bg-slate-900 text-slate-100 font-mono text-[10px] space-y-3 max-h-[450px] overflow-y-auto">
+                        <p className="text-zinc-400 text-[9px] font-sans">
+                          Copy the SQL script below and paste it into your Supabase **SQL Editor** tab, then click **Run** to set up all 16 required tables (messages, activity logs, care logs, etc.) and disable RLS so that client-side inserts succeed instantly:
+                        </p>
+                        <pre className="p-3 bg-black/50 border border-white/5 rounded-lg select-all leading-relaxed whitespace-pre-wrap text-emerald-400">
+{`-- 1. Create the profiles table
+CREATE TABLE IF NOT EXISTS profiles (
+    id TEXT PRIMARY KEY,
+    name TEXT,
+    avatar TEXT,
+    email TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 2. Create the period_feedback table (Messages for Ruu)
+CREATE TABLE IF NOT EXISTS period_feedback (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    message TEXT NOT NULL,
+    rating INTEGER,
+    mood TEXT,
+    anonymous BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 3. Create the love_notes table
+CREATE TABLE IF NOT EXISTS love_notes (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    note TEXT NOT NULL,
+    favorite BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 4. Create the care_streak table
+CREATE TABLE IF NOT EXISTS care_streak (
+    user_id TEXT PRIMARY KEY,
+    streak INTEGER DEFAULT 1,
+    last_visit TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 5. Create the daily_rewards table
+CREATE TABLE IF NOT EXISTS daily_rewards (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    reward TEXT NOT NULL,
+    claimed_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 6. Create the mood_history table
+CREATE TABLE IF NOT EXISTS mood_history (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    selected_mood TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 7. Create the comfort_checklist table
+CREATE TABLE IF NOT EXISTS comfort_checklist (
+    user_id TEXT PRIMARY KEY,
+    water BOOLEAN DEFAULT FALSE,
+    rest BOOLEAN DEFAULT FALSE,
+    sleep BOOLEAN DEFAULT FALSE,
+    food BOOLEAN DEFAULT FALSE,
+    music BOOLEAN DEFAULT FALSE,
+    completed_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 8. Create the gift_collection table
+CREATE TABLE IF NOT EXISTS gift_collection (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    gift_name TEXT NOT NULL,
+    gift_type TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 9. Create the cosmic_wishes table
+CREATE TABLE IF NOT EXISTS cosmic_wishes (
+    id TEXT PRIMARY KEY,
+    text TEXT NOT NULL,
+    type TEXT NOT NULL,
+    x NUMERIC NOT NULL,
+    y NUMERIC NOT NULL,
+    color TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 10. Create the care_counters table
+CREATE TABLE IF NOT EXISTS care_counters (
+    user_id TEXT PRIMARY KEY,
+    counters JSONB NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 11. Create the love_jar table
+CREATE TABLE IF NOT EXISTS love_jar (
+    user_id TEXT PRIMARY KEY,
+    count INTEGER NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 12. Create the activity_logs table
+CREATE TABLE IF NOT EXISTS activity_logs (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    details TEXT,
+    page TEXT,
+    browser TEXT,
+    device TEXT,
+    session_id TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 13. Create the messages table (Private Chat Room)
+CREATE TABLE IF NOT EXISTS messages (
+    id TEXT PRIMARY KEY,
+    sender_id TEXT NOT NULL,
+    recipient_id TEXT NOT NULL,
+    text TEXT NOT NULL,
+    image_url TEXT,
+    voice_url TEXT,
+    reply_to_id TEXT,
+    seen_status TEXT DEFAULT 'sent',
+    edited BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 14. Create the typing_status table
+CREATE TABLE IF NOT EXISTS typing_status (
+    user_id TEXT PRIMARY KEY,
+    is_typing BOOLEAN DEFAULT FALSE,
+    last_updated TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- 15. Create the presence table
+CREATE TABLE IF NOT EXISTS presence (
+    user_id TEXT PRIMARY KEY,
+    status TEXT DEFAULT 'offline',
+    last_seen TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    browser TEXT,
+    device TEXT
+);
+
+-- 16. Create the notifications table
+CREATE TABLE IF NOT EXISTS notifications (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- --- STEP A: DISABLE ROW LEVEL SECURITY (RLS) SO BOTH OF YOU CAN CONNECT WITHOUT COMPLEX AUTH ---
+ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE period_feedback DISABLE ROW LEVEL SECURITY;
+ALTER TABLE love_notes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE care_streak DISABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_rewards DISABLE ROW LEVEL SECURITY;
+ALTER TABLE mood_history DISABLE ROW LEVEL SECURITY;
+ALTER TABLE comfort_checklist DISABLE ROW LEVEL SECURITY;
+ALTER TABLE gift_collection DISABLE ROW LEVEL SECURITY;
+ALTER TABLE cosmic_wishes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE care_counters DISABLE ROW LEVEL SECURITY;
+ALTER TABLE love_jar DISABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_logs DISABLE ROW LEVEL SECURITY;
+ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
+ALTER TABLE typing_status DISABLE ROW LEVEL SECURITY;
+ALTER TABLE presence DISABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
+
+-- --- STEP B: ENABLE REAL-TIME REPLICATION FOR ACTIVE SYNCING CHATS ---
+alter publication supabase_realtime add table messages;
+alter publication supabase_realtime add table typing_status;
+alter publication supabase_realtime add table presence;
+alter publication supabase_realtime add table notifications;`}
+                        </pre>
+                      </div>
+                    </details>
+                  </div>
+                </div>
               </div>
             )}
 

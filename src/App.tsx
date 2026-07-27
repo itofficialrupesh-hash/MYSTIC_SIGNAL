@@ -20,6 +20,8 @@ import BestieZone from './components/BestieZone';
 import BestiePasscodeLock from './components/BestiePasscodeLock';
 import PeriodHub from './components/PeriodHub';
 import PeriodHubLock from './components/PeriodHubLock';
+import PrivateChat from './components/PrivateChat';
+import VirtualHug from './components/VirtualHug';
 
 // Types and Defaults
 import { LoveConfig, MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter } from './types';
@@ -51,7 +53,10 @@ export default function App() {
 
   // UI States
   const [showAdmin, setShowAdmin] = useState(false);
-  const [activeTab, setActiveTab] = useState<'safekeep' | 'gallery' | 'secret-room' | 'bestie-zone' | 'period-hub'>('safekeep');
+  const [isAdminPassModalOpen, setIsAdminPassModalOpen] = useState(false);
+  const [adminPassInput, setAdminPassInput] = useState('');
+  const [adminPassError, setAdminPassError] = useState(false);
+  const [activeTab, setActiveTab] = useState<'safekeep' | 'gallery' | 'secret-room' | 'bestie-zone' | 'period-hub' | 'chat'>('safekeep');
   const [homeSubView, setHomeSubView] = useState<'letters' | 'bestie'>('letters');
   const [heartsList, setHeartsList] = useState<RisingHeart[]>([]);
   const [isBestieZoneUnlocked, setIsBestieZoneUnlocked] = useState<boolean>(false);
@@ -337,7 +342,8 @@ export default function App() {
               { id: 'gallery', label: '📸 Polaroid Gallery', icon: <ImageIcon size={13} /> },
               { id: 'period-hub', label: '🌸 Period Hub', icon: <span className="text-xs">🌸</span> },
               { id: 'secret-room', label: '❤️ Favorite Room', icon: <Heart size={13} /> },
-              { id: 'bestie-zone', label: '👯 Vanshika Bestie', icon: <Heart size={13} fill="currentColor" /> }
+              { id: 'bestie-zone', label: '👯 Vanshika Bestie', icon: <Heart size={13} fill="currentColor" /> },
+              { id: 'chat', label: '💖 Talk To Ruu', icon: <Sparkles size={13} /> }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -557,13 +563,20 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {activeTab === 'chat' && (
+              <div className="animate-fade-in max-w-4xl mx-auto space-y-6">
+                <PrivateChat onTriggerConfetti={triggerHeartsShower} />
+                <VirtualHug onTriggerConfetti={triggerHeartsShower} />
+              </div>
+            )}
           </main>
 
         </div>
       )}
 
       {/* CUSTOMIZABILITY ADMIN / CREATOR PANEL MODAL OVERLAY */}
-      {showAdmin && isUnlocked && (
+      {showAdmin && (
         <SecretAdmin 
           config={config}
           photos={photos}
@@ -574,6 +587,84 @@ export default function App() {
           onReset={handleResetFactoryDefaults}
           onClose={() => setShowAdmin(false)}
         />
+      )}
+
+      {/* ADMIN PASSCODE GATE MODAL */}
+      {isAdminPassModalOpen && (
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-pink-500/30 rounded-3xl p-6 w-full max-w-sm text-center shadow-[0_0_50px_rgba(236,72,153,0.3)] relative">
+            <button
+              onClick={() => {
+                setIsAdminPassModalOpen(false);
+                setAdminPassInput('');
+                setAdminPassError(false);
+              }}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors cursor-pointer text-sm"
+            >
+              ✕
+            </button>
+            <div className="w-12 h-12 rounded-full bg-pink-500/10 border border-pink-500/30 flex items-center justify-center mx-auto text-pink-400 text-xl mb-4 animate-pulse">
+              🔐
+            </div>
+            <h3 className="font-serif text-lg font-bold text-white mb-1">Admin Access Gate</h3>
+            <p className="text-xs text-zinc-400 mb-4">Enter the secret master key to open configuration tools.</p>
+            
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const cleanedInput = adminPassInput.trim().toLowerCase();
+                if (cleanedInput === 'myticruu' || cleanedInput === 'mysticruu') {
+                  setShowAdmin(true);
+                  setIsAdminPassModalOpen(false);
+                  setAdminPassInput('');
+                  setAdminPassError(false);
+                } else {
+                  setAdminPassError(true);
+                  try {
+                    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+                    if (AudioContextClass) {
+                      const ctx = new AudioContextClass();
+                      const osc = ctx.createOscillator();
+                      const gain = ctx.createGain();
+                      osc.type = 'sawtooth';
+                      osc.frequency.setValueAtTime(150, ctx.currentTime);
+                      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
+                      osc.connect(gain);
+                      gain.connect(ctx.destination);
+                      osc.start();
+                      osc.stop(ctx.currentTime + 0.3);
+                    }
+                  } catch (err) {}
+                }
+              }}
+              className="space-y-3 text-left"
+            >
+              <input
+                type="password"
+                placeholder="Enter master password..."
+                value={adminPassInput}
+                onChange={(e) => {
+                  setAdminPassInput(e.target.value);
+                  setAdminPassError(false);
+                }}
+                className="w-full px-4 py-2.5 bg-slate-950 border border-white/10 rounded-2xl text-white text-xs font-mono text-center focus:outline-none focus:border-pink-500 transition-colors"
+                autoFocus
+              />
+              {adminPassError && (
+                <p className="text-[10px] text-red-400 font-bold text-center animate-pulse">
+                  ❌ Invalid Master Password! Access Denied.
+                </p>
+              )}
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white text-xs font-bold tracking-widest uppercase rounded-2xl cursor-pointer shadow-md transition-all active:scale-95"
+              >
+                Unlock Panel 🔓
+              </button>
+            </form>
+          </div>
+        </div>
       )}
 
 
@@ -601,6 +692,16 @@ export default function App() {
         <p className="text-[9px] text-pink-400/60 mt-1 uppercase tracking-widest font-mono">
           by your Ruu ✨
         </p>
+
+        <div className="mt-8">
+          <button
+            onClick={() => setIsAdminPassModalOpen(true)}
+            className="px-4 py-2 bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 text-pink-500 rounded-full text-xs font-bold font-mono tracking-widest uppercase transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer shadow-sm hover:shadow-md"
+          >
+            <Settings size={14} className="animate-spin-slow" />
+            Secret Admin Panel
+          </button>
+        </div>
       </footer>
 
       {/* GLOBAL SECRET APOLOGY ZONE BADGE & CARD CONTROLLER */}

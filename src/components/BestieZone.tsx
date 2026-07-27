@@ -4,6 +4,7 @@ import {
   ChevronRight, RefreshCw, Eye, ThumbsUp, PartyPopper, Flame 
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { supabaseService } from '../lib/supabase';
 import sorryBoyPhoto from '../assets/images/regenerated_image_1780655372225.jpg';
 import vanshikaHappyPhoto from '../assets/images/regenerated_image_1780939152437.jpg';
 
@@ -191,6 +192,7 @@ export default function BestieZone({ onTriggerConfetti }: BestieZoneProps) {
   const handleUnlockMyHeart = () => {
     setIsOpeningDoor(true);
     setDoorUnlocked(true);
+    supabaseService.activityLogs.log('opened_bestie_heart', 'User clicked the big glowing heart to open the Bestie Zone main content.');
     setTimeout(() => {
       setScreenBrightness(true);
     }, 600);

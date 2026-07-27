@@ -3,6 +3,7 @@ import {
   Heart, Mail, Lock, Unlock, Check, Sparkles, BookOpen, 
   Smile, HelpCircle, Gift, Compass, ChevronRight, X, Play, RefreshCw 
 } from 'lucide-react';
+import { logActivity } from '../lib/activityLogger';
 import { LoveConfig, StoryChapter, FavoriteMemory, OpenWhenLetter } from '../types';
 
 interface OpenWhenLettersProps {
@@ -182,6 +183,7 @@ export default function OpenWhenLetters({
   const handleVirtualHugClick = () => {
     setHugCount(prev => prev + 1);
     onTriggerConfetti();
+    logActivity("Clicked Hug", `Total Hugs: ${hugCount + 1}`);
   };
 
   return (

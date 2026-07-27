@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { logActivity } from '../lib/activityLogger';
 
 interface MusicPlayerProps {
   musicUrl?: string;
@@ -315,11 +316,13 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
           setIsMuted(false);
           setPlaybackStatus("Playing Live 🔊");
           userVoluntarilyMutedRef.current = false;
+          logActivity("Played Music", "Unmuted background track");
         } else {
           player.mute();
           setIsMuted(true);
           setPlaybackStatus("Muted");
           userVoluntarilyMutedRef.current = true;
+          logActivity("Muted Music", "Muted background track");
         }
       } catch (e) {
         console.warn(e);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabaseService } from '../lib/supabase';
 
 // Mood Definitions
 export type MoodType = 'happy' | 'sad' | 'angry' | 'loved' | 'sleepy' | 'missing' | 'excited';
@@ -103,6 +104,7 @@ export default function TodaysMood() {
     setIsOctopusClicked(true);
     setShowLovePopup(true);
     triggerHearts(100);
+    supabaseService.activityLogs.log('octopus_clicked', 'User clicked the plush octopus and got a love popup.');
     setTimeout(() => {
       setIsOctopusClicked(false);
       setShowLovePopup(false);
@@ -127,6 +129,12 @@ export default function TodaysMood() {
   const handleGiveHugClick = () => {
     triggerHearts(100);
     setCurrentMood('loved');
+    supabaseService.activityLogs.log('gave_hug', 'User clicked the "Give Her a Hug" button.');
+  };
+
+  const handleMoodSelect = (m: MoodType) => {
+    setCurrentMood(m);
+    supabaseService.activityLogs.log('mood_selected', `User changed mood to: ${MOODS[m].label} ${MOODS[m].emoji}`);
   };
 
   return (
@@ -209,7 +217,7 @@ export default function TodaysMood() {
             {(Object.keys(MOODS) as MoodType[]).map(m => (
               <button
                 key={m}
-                onClick={() => setCurrentMood(m)}
+                onClick={() => handleMoodSelect(m)}
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-xl transition-all duration-300 ${currentMood === m ? 'scale-110 ring-2 ring-white/50 bg-white/20' : 'opacity-60 hover:opacity-100 hover:scale-105 bg-white/5'}`}
                 title={MOODS[m].label}
               >
