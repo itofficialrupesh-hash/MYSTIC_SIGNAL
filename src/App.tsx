@@ -591,7 +591,7 @@ export default function App() {
 
       {/* ADMIN PASSCODE GATE MODAL */}
       {isAdminPassModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-950/95 z-[100] flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-pink-500/30 rounded-3xl p-6 w-full max-w-sm text-center shadow-[0_0_50px_rgba(236,72,153,0.3)] relative">
             <button
               onClick={() => {

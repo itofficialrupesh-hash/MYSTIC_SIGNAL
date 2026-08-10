@@ -410,7 +410,7 @@ export default function SecretAdmin({
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-3 animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 animate-fade-in"
       id="admin-backdrop"
     >
       <div 

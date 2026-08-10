@@ -187,10 +187,6 @@ export default function FloatingParticles() {
 
         switch (p.type) {
           case 'heart':
-            if (enableShadows) {
-              ctx.shadowColor = 'rgba(236, 72, 153, 0.4)';
-              ctx.shadowBlur = 6;
-            }
             drawHeart(ctx, 0, 0, p.size);
             break;
           case 'star':

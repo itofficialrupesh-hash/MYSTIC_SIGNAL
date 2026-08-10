@@ -331,63 +331,26 @@ export default function MusicPlayer({ musicUrl }: MusicPlayerProps) {
   };
 
   return (
-    <div 
-      className={`fixed bottom-4 left-4 z-50 bg-slate-950/90 backdrop-blur-md rounded-xl border border-pink-500/25 shadow-[0_0_15px_rgba(236,72,153,0.25)] flex flex-col items-center gap-1.5 transition-all duration-300 md:bottom-5 md:left-5 ${
-        isMinimized ? 'w-[110px] p-1.5 opacity-90 hover:opacity-100 hover:scale-[1.03]' : 'w-[180px] p-2.5'
-      }`}
-    >
-      <div className="flex items-center justify-between w-full gap-1 px-0.5">
-        <span className="text-[9.5px] font-black text-pink-300 tracking-wider uppercase flex items-center gap-0.5 select-none drop-shadow-[0_0_8px_rgba(236,72,153,0.3)]">
-          {isMinimized ? "🎵" : "💖 Music"}
-        </span>
-        <button 
-          onClick={() => setIsMinimized(!isMinimized)}
-          className="text-[9px] bg-pink-900/40 text-pink-200 hover:bg-pink-800/60 hover:text-white px-2 py-0.5 rounded transition-all font-bold"
-          title={isMinimized ? "Maximize Music Player" : "Minimize Music Player"}
-        >
-          {isMinimized ? "Show" : "Hide"}
-        </button>
+    <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2">
+      {/* Offscreen YouTube iframe container required for audio engine */}
+      <div className="w-1 h-1 opacity-0 overflow-hidden absolute pointer-events-none -z-50" aria-hidden="true">
+        <div id="bg-music-iframe-api" className="w-full h-full" />
       </div>
 
-      <div className={`flex flex-col items-center gap-2 w-full transition-all duration-300 ${isMinimized ? 'h-0 opacity-0 pointer-events-none overflow-hidden mt-0' : 'h-auto opacity-100 mt-1'}`}>
-        
-        {/* 
-          Keep the YouTube iframe element PERMANENTLY mounted in the DOM.
-          Do not conditionally unmount this wrapper.
-        */}
-        <div className="rounded-lg overflow-hidden border border-pink-500/20 bg-black relative shadow-inner transition-all duration-300 w-[156px] h-[90px] mb-0.5">
-          <div id="bg-music-iframe-api" className="w-full h-full" />
-        </div>
-        
-        <div className="flex flex-col gap-1.5 items-center w-full">
-          {/* Reactive Mute-Status button */}
-          <button
-            onClick={handleManualPlayUnmute}
-            className={`w-full text-[10px] font-extrabold py-1.5 px-2 rounded-lg active:scale-95 transition-all flex items-center justify-center gap-1 ${
-              isMuted 
-                ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white animate-pulse shadow-xs hover:from-pink-600 hover:to-rose-600' 
-                : 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-950/80'
-            }`}
-          >
-            {isMuted ? "🔊 Tap to Play" : "🔇 Mute"}
-          </button>
-          
-          <div className="flex items-center gap-0.5 justify-center select-none">
-            <span className="text-[8px] uppercase tracking-widest font-mono text-zinc-400 font-semibold">
-              Status:
-            </span>
-            <span className={`text-[8.5px] font-extrabold px-0.5 rounded uppercase tracking-wider ${
-              isMuted ? 'text-pink-400 animate-pulse' : 'text-emerald-400'
-            }`}>
-              {playbackStatus}
-            </span>
-          </div>
-
-          <p className="text-[8px] text-pink-300/70 font-semibold text-center leading-snug select-none px-1">
-            Tap screen to play music! 💕
-          </p>
-        </div>
-      </div>
+      {/* Ultra-compact Mini Music Player Toggle */}
+      <button
+        type="button"
+        onClick={handleManualPlayUnmute}
+        className={`px-3 py-1.5 rounded-full backdrop-blur-md border shadow-lg transition-all duration-300 flex items-center gap-1.5 text-xs font-black cursor-pointer active:scale-95 select-none ${
+          isMuted
+            ? 'bg-slate-950/90 text-pink-300 border-pink-500/40 hover:bg-slate-900 shadow-[0_0_12px_rgba(236,72,153,0.3)] animate-pulse'
+            : 'bg-slate-950/90 text-emerald-300 border-emerald-500/40 hover:bg-slate-900 shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+        }`}
+        title={isMuted ? "Play Music" : "Mute Music"}
+      >
+        <span className="text-sm">{isMuted ? "▶️" : "🔊"}</span>
+        <span>{isMuted ? "Play" : "Mute"}</span>
+      </button>
     </div>
   );
 }
