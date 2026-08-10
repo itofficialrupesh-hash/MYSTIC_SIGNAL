@@ -233,12 +233,12 @@ export default function App() {
     <div id="app-root-layout" className="relative min-h-screen pb-20 overflow-x-hidden bg-gradient-to-br from-[#0a0712] via-[#050508] to-[#120a1c] text-zinc-100 transition-all duration-300">
       
       {/* Glow effects mimicking the logo theme */}
-      <div className="absolute top-10 left-[15%] w-96 h-96 bg-pink-500/10 rounded-full blur-[130px] pointer-events-none select-none z-0" />
-      <div className="absolute top-[40%] right-[10%] w-[450px] h-[450px] bg-purple-500/5 rounded-full blur-[150px] pointer-events-none select-none z-0" />
-      <div className="absolute bottom-20 left-[20%] w-[380px] h-[380px] bg-pink-500/10 rounded-full blur-[120px] pointer-events-none select-none z-0" />
+      <div className="fixed top-10 left-[15%] w-72 h-72 bg-pink-500/10 rounded-full blur-3xl pointer-events-none select-none z-0 transform-gpu" />
+      <div className="fixed top-[40%] right-[10%] w-80 h-80 bg-purple-500/5 rounded-full blur-3xl pointer-events-none select-none z-0 transform-gpu" />
+      <div className="fixed bottom-20 left-[20%] w-72 h-72 bg-pink-500/10 rounded-full blur-3xl pointer-events-none select-none z-0 transform-gpu" />
 
       {/* Dynamic drifting cute stickers canvas background */}
-      <FloatingParticles />
+      <FloatingParticles paused={showAdmin || isAdminPassModalOpen} />
 
       {/* BACKGROUND MUSIC PLAYER STREAM (Global float controller) */}
       <MusicPlayer musicUrl={config.bgMusicUrl} />

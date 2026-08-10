@@ -17,14 +17,23 @@ interface Particle {
   time: number;
 }
 
-export default function FloatingParticles() {
+interface FloatingParticlesProps {
+  paused?: boolean;
+}
+
+export default function FloatingParticles({ paused = false }: FloatingParticlesProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
+
+    if (paused) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
 
     let animationFrameId: number;
     let particles: Particle[] = [];
@@ -34,26 +43,16 @@ export default function FloatingParticles() {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent));
     
-    // Performance budgeting
-    const maxParticles = prefersReducedMotion ? 0 : (isMobile ? 12 : 35);
-    const enableShadows = !isMobile && !prefersReducedMotion;
+    // Performance budgeting - keep particle count light for smooth 60fps
+    const maxParticles = prefersReducedMotion ? 0 : (isMobile ? 8 : 16);
 
-    // Resize handling
+    // Fixed Viewport Resize handling (prevents multi-thousand pixel canvas sizes)
     const resizeCanvas = () => {
-      canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
-      canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
 
-    const resizeObserver = new ResizeObserver(() => {
-      resizeCanvas();
-    });
-
-    if (canvas.parentElement) {
-      resizeObserver.observe(canvas.parentElement);
-    } else {
-      window.addEventListener('resize', resizeCanvas);
-    }
-    
+    window.addEventListener('resize', resizeCanvas, { passive: true });
     resizeCanvas();
 
     const colors = [
@@ -70,21 +69,21 @@ export default function FloatingParticles() {
 
     const createParticle = (initBottom = false): Particle => {
       const type = types[Math.floor(Math.random() * types.length)];
-      const size = Math.random() * 12 + 6;
+      const size = Math.random() * 10 + 5;
       return {
         x: Math.random() * canvas.width,
         y: initBottom ? canvas.height + 20 : Math.random() * canvas.height,
         size,
-        speedY: -(Math.random() * 0.6 + 0.3),
-        speedX: (Math.random() - 0.5) * 0.4,
+        speedY: -(Math.random() * 0.5 + 0.25),
+        speedX: (Math.random() - 0.5) * 0.3,
         rotation: Math.random() * Math.PI * 2,
-        rotationSpeed: (Math.random() - 0.5) * 0.015,
+        rotationSpeed: (Math.random() - 0.5) * 0.01,
         color: colors[Math.floor(Math.random() * colors.length)],
         type,
-        opacity: Math.random() * 0.35 + 0.25,
-        bounceMultiplier: Math.random() * 0.15 + 0.05,
-        wiggleSpeed: Math.random() * 0.015 + 0.005,
-        wiggleWidth: Math.random() * 8 + 4,
+        opacity: Math.random() * 0.3 + 0.2,
+        bounceMultiplier: Math.random() * 0.1 + 0.04,
+        wiggleSpeed: Math.random() * 0.01 + 0.005,
+        wiggleWidth: Math.random() * 6 + 3,
         time: Math.random() * 100,
       };
     };
@@ -143,18 +142,8 @@ export default function FloatingParticles() {
     const drawButterfly = (c: CanvasRenderingContext2D, x: number, y: number, size: number, time: number) => {
       const wingWiggle = Math.abs(Math.sin(time * 0.08));
       c.beginPath();
-      // Left wings
       c.ellipse(x - size * 0.4, y - size * 0.2, size * wingWiggle * 0.5, size * 0.4, -0.2, 0, Math.PI * 2);
-      c.ellipse(x - size * 0.35, y + size * 0.2, size * wingWiggle * 0.4, size * 0.3, 0.2, 0, Math.PI * 2);
-      // Right wings
       c.ellipse(x + size * 0.4, y - size * 0.2, size * wingWiggle * 0.5, size * 0.4, 0.2, 0, Math.PI * 2);
-      c.ellipse(x + size * 0.35, y + size * 0.2, size * wingWiggle * 0.4, size * 0.3, -0.2, 0, Math.PI * 2);
-      c.fill();
-      
-      // Butterfly body
-      c.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      c.beginPath();
-      c.ellipse(x, y, size * 0.08, size * 0.45, 0, 0, Math.PI * 2);
       c.fill();
     };
 
@@ -164,12 +153,18 @@ export default function FloatingParticles() {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    let lastTime = performance.now();
+    const fpsInterval = 1000 / 45; // cap at 45fps for butter smooth performance without GPU drain
+
     // Animation loop
-    const animate = () => {
-      if (!isTabVisible || prefersReducedMotion) {
-        animationFrameId = requestAnimationFrame(animate);
-        return;
-      }
+    const animate = (now: number) => {
+      animationFrameId = requestAnimationFrame(animate);
+
+      if (!isTabVisible || prefersReducedMotion) return;
+
+      const delta = now - lastTime;
+      if (delta < fpsInterval) return;
+      lastTime = now - (delta % fpsInterval);
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -213,25 +208,22 @@ export default function FloatingParticles() {
           particles[idx] = createParticle(true);
         }
       });
-
-      animationFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    animationFrameId = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      resizeObserver.disconnect();
       window.removeEventListener('resize', resizeCanvas);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [paused]);
 
   return (
     <canvas
       id="floating-canvas"
       ref={canvasRef}
-      className="absolute top-0 left-0 w-full h-full pointer-events-none z-10 opacity-70"
+      className="fixed inset-0 w-full h-full pointer-events-none z-10 opacity-70"
     />
   );
 }

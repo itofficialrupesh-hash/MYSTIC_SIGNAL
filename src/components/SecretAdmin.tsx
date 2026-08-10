@@ -82,6 +82,7 @@ export default function SecretAdmin({
 
     const deviceCounts: Record<string, number> = {};
     const browserCounts: Record<string, number> = {};
+    const sessions = new Set<string>();
 
     activities.forEach(a => {
       const actionLower = a.action ? a.action.toLowerCase() : '';
@@ -98,6 +99,7 @@ export default function SecretAdmin({
           const parsed = JSON.parse(detailsStr);
           device = parsed.device || 'Desktop';
           browser = parsed.browser || 'Google Chrome';
+          if (parsed.session_id) sessions.add(parsed.session_id);
         } catch (e) {
           if (detailsStr.toLowerCase().includes('mobile')) {
             device = 'Mobile';
@@ -132,7 +134,8 @@ export default function SecretAdmin({
       musicCount,
       deviceCounts,
       browserCounts,
-      totalDevices
+      totalDevices,
+      uniqueSessionsCount: Math.max(sessions.size, 1)
     };
   }, [activities]);
 
@@ -410,7 +413,7 @@ export default function SecretAdmin({
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3"
       id="admin-backdrop"
     >
       <div 
@@ -517,10 +520,10 @@ export default function SecretAdmin({
                 type="button"
                 onClick={() => setActiveTab('analytics')}
                 className={`px-4 py-2 text-xs font-bold rounded-xl whitespace-nowrap text-left transition-colors cursor-pointer flex items-center gap-2 ${
-                  activeTab === 'analytics' ? 'bg-pink-100/60 text-pink-600 animate-pulse font-black' : 'text-gray-500 hover:bg-gray-100'
+                  activeTab === 'analytics' ? 'bg-pink-100/60 text-pink-600 font-black' : 'text-gray-500 hover:bg-gray-100'
                 }`}
               >
-                <Sparkles size={14} className="text-rose-500 animate-spin-slow" />
+                <Sparkles size={14} className="text-rose-500" />
                 <span>Love Analytics Hub 💖</span>
               </button>
               <button
@@ -530,7 +533,7 @@ export default function SecretAdmin({
                   activeTab === 'supabase' ? 'bg-emerald-100/60 text-emerald-700 font-extrabold' : 'text-gray-500 hover:bg-gray-100'
                 }`}
               >
-                <Database size={14} className="text-emerald-500 animate-pulse" />
+                <Database size={14} className="text-emerald-500" />
                 <span>Supabase Database ⚡</span>
               </button>
             </nav>
@@ -596,7 +599,7 @@ export default function SecretAdmin({
             
             {/* TAB 1: BASICS */}
             {activeTab === 'basics' && (
-              <div className="space-y-5 animate-fade-in">
+              <div className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">Your First Name / Signature</label>
@@ -686,7 +689,7 @@ export default function SecretAdmin({
 
             {/* TAB 2: POLAROID PHOTO GALLERY */}
             {activeTab === 'photos' && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-6">
                 {/* Form to add photo */}
                 <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-100 space-y-4">
                   <h4 className="text-xs font-bold text-gray-700 flex items-center gap-1">
@@ -821,7 +824,7 @@ export default function SecretAdmin({
 
             {/* TAB 3: STORY AND FAVORITE MEMORIES */}
             {activeTab === 'story' && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-6">
                 {/* Chapters list */}
                 <div className="space-y-4">
                   <h4 className="text-xs font-bold text-gray-700 flex items-center gap-1">
@@ -939,7 +942,7 @@ export default function SecretAdmin({
 
             {/* TAB 4: LETTERS */}
             {activeTab === 'letters' && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-6">
                 <div className="space-y-6">
                   {localLetters.map((letObj, idx) => (
                     <div key={letObj.id} className="p-4 border border-rose-100 bg-pink-50/20 rounded-2xl space-y-3">
@@ -993,7 +996,7 @@ export default function SecretAdmin({
 
             {/* TAB 5: LIFETIME PROMISES & SPECIAL REASONS */}
             {activeTab === 'promises' && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-6">
                 
                 {/* Promises list */}
                 <div className="space-y-3">
@@ -1051,7 +1054,7 @@ export default function SecretAdmin({
 
             {/* TAB 6: ATTEMPTS LOGS */}
             {activeTab === 'attempts' && (
-              <div className="space-y-6 animate-fade-in text-gray-800">
+              <div className="space-y-6 text-gray-800">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl gap-3">
                   <div>
                     <h4 className="text-xs font-bold text-gray-700">Database Action Hub</h4>
@@ -1167,7 +1170,7 @@ export default function SecretAdmin({
 
             {/* TAB: ACTIVITIES */}
             {activeTab === 'activities' && (
-              <div className="space-y-6 animate-fade-in text-gray-800">
+              <div className="space-y-6 text-gray-800">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl gap-3">
                   <div>
                     <h4 className="text-xs font-bold text-gray-700">Real-Time Interaction Feed</h4>
@@ -1245,7 +1248,7 @@ export default function SecretAdmin({
 
             {/* TAB: LOVE ANALYTICS HUB */}
             {activeTab === 'analytics' && (
-              <div className="space-y-6 animate-fade-in text-gray-800">
+              <div className="space-y-6 text-gray-800">
                 {/* Metric Summary Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-4 bg-pink-50/50 border border-pink-100 rounded-2xl text-center space-y-1 hover:shadow-md transition-shadow">
@@ -1354,16 +1357,7 @@ export default function SecretAdmin({
                       <div className="flex justify-between py-2 border-b border-slate-50">
                         <span className="text-gray-400 font-bold">Total Unique Sessions</span>
                         <span className="font-mono font-bold text-indigo-600">
-                          {(() => {
-                            const sessions = new Set();
-                            activities.forEach(a => {
-                              try {
-                                const p = JSON.parse(a.details);
-                                if (p.session_id) sessions.add(p.session_id);
-                              } catch(e) {}
-                            });
-                            return Math.max(sessions.size, 1);
-                          })()}
+                          {analyticsData.uniqueSessionsCount}
                         </span>
                       </div>
                       <p className="text-[10px] text-gray-400 italic pt-1 leading-normal">
@@ -1377,7 +1371,7 @@ export default function SecretAdmin({
 
             {/* TAB: SUPABASE DETAILS */}
             {activeTab === 'supabase' && (
-              <div className="space-y-6 animate-fade-in text-gray-800 p-1">
+              <div className="space-y-6 text-gray-800 p-1">
                 {/* Connection Banner */}
                 <div className={`p-5 rounded-2xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${isRealSupabase ? 'bg-emerald-50/60 border-emerald-100' : 'bg-amber-50/60 border-amber-100'}`}>
                   <div className="space-y-1">
