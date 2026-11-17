@@ -13,7 +13,6 @@ import PeriodHubLock from './PeriodHubLock';
 import PrivateChat from './PrivateChat';
 import PrivateChatLock from './PrivateChatLock';
 import VirtualHug from './VirtualHug';
-import NavratriApologySection from './NavratriApologySection';
 
 interface LandingPageProps {
   config: LoveConfig;
@@ -61,7 +60,6 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti, onO
   
   // Real-Time Private Chat states
   const [showChatModal, setShowChatModal] = useState(false);
-  const [showNavratriModal, setShowNavratriModal] = useState(false);
   const [isChatUnlocked, setIsChatUnlocked] = useState<boolean>(() => {
     try {
       return localStorage.getItem('is_chat_unlocked') === 'true';
@@ -429,57 +427,6 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti, onO
       </header>
       
       <TodaysMood />
-
-      {/* ─── SPECIAL FESTIVE HIGHLIGHT: HAPPY NAVRATRI & HEARTFELT APOLOGY FOR MERI DEVI JI ─── */}
-      <div className="w-full max-w-5xl mb-8 relative z-10">
-        <div
-          onClick={() => {
-            setShowNavratriModal(true);
-            try {
-              supabaseService.activityLogs.log(
-                'opened_navratri_apology',
-                'Visitor opened Happy Navratri & Heartfelt Apology section'
-              );
-            } catch (e) {}
-          }}
-          className="cursor-pointer rounded-[32px] p-[2px] bg-gradient-to-r from-amber-400 via-rose-500 to-amber-300 shadow-[0_10px_40px_rgba(245,158,11,0.28)] hover:shadow-[0_14px_50px_rgba(245,158,11,0.45)] transition-all duration-300 hover:scale-[1.005]"
-        >
-          <div
-            className="rounded-[30px] px-6 py-5 md:px-8 md:py-6 flex flex-col md:flex-row items-center justify-between gap-5 text-center md:text-left relative overflow-hidden"
-            style={{
-              background:
-                'radial-gradient(circle at 20% 50%, #4c091b 0%, #2b0510 60%, #190208 100%)',
-            }}
-          >
-            <div className="space-y-1.5 relative z-10">
-              <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.22em] text-amber-300 font-bold">
-                <span>🪔</span>
-                <span>✨ Jai Mata Di • Special Festive Gift ✨</span>
-                <span>🌺</span>
-              </div>
-              <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-amber-100">
-                Happy Navratri, <span className="text-amber-300">Meri Devi Ji (Vanshika Ji)</span> ❤️🙏🏻
-              </h2>
-              <p className="text-xs sm:text-sm text-amber-100/85 font-serif italic max-w-2xl">
-                “Aaj ka din aapke naam, ek chhoti si wish aur dil se nikli hui ek maafi…” — Featuring heartfelt wishes for Vanshika Ji, Taruu & Tanishq.
-              </p>
-            </div>
-
-            <div className="shrink-0 relative z-10">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowNavratriModal(true);
-                }}
-                className="px-6 py-3 rounded-full bg-gradient-to-r from-amber-400 via-rose-400 to-amber-300 hover:from-amber-300 hover:to-rose-300 text-[#26040c] font-serif font-black text-xs sm:text-sm tracking-wide shadow-[0_0_25px_rgba(251,191,36,0.45)] cursor-pointer transition-transform active:scale-95 whitespace-nowrap"
-              >
-                Open My Heart ❤️🪔
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Main Login / Lock Area - Side-by-side or stacked scrapbook */}
       <div className="flex-1 w-full max-w-5xl flex flex-col lg:flex-row gap-8 items-stretch justify-center relative z-10 mb-8">
@@ -879,33 +826,7 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti, onO
                     </div>
                   </div>
 
-                  {/* Card 9: Happy Navratri & Heartfelt Apology (spans 3 - Full Width, No Password Needed!) */}
-                  <div
-                    onClick={() => setShowNavratriModal(true)}
-                    className="hidden md:col-span-3 cursor-pointer bg-gradient-to-r from-[#420817] via-[#2c0510] to-[#1c030a] border border-amber-400/40 rounded-[28px] p-5 hover:border-amber-300/80 transition-all duration-300 flex-col md:flex-row items-center justify-between min-h-[105px] gap-4 px-6 md:px-8 shadow-[0_6px_30px_rgba(245,158,11,0.18)] relative group overflow-hidden"
-                  >
-                    <div className="flex items-center gap-4 relative z-10">
-                      <span className="text-4xl group-hover:scale-110 transition-transform duration-300 select-none">🪔</span>
-                      <div className="text-left">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-mono font-bold text-amber-300 uppercase tracking-widest">
-                            ✨ Jai Mata Di • Open Direct Access
-                          </span>
-                        </div>
-                        <h4 className="font-serif text-sm md:text-base font-black text-amber-200 tracking-wide mt-1 leading-tight">
-                          🌺 Happy Navratri & A Heartfelt Apology for Meri Devi Ji ❤️
-                        </h4>
-                        <p className="text-[11px] text-amber-100/85 mt-1 max-w-[480px] leading-relaxed font-medium">
-                          A peaceful, devotional digital gift dedicated to Vanshika Ji, with festive wishes for Vanshika Ji, Taruu & Tanishq. Click to open!
-                        </p>
-                      </div>
-                    </div>
-                    <div className="px-4 py-2 rounded-full bg-amber-400/20 border border-amber-300/50 text-amber-200 text-xs font-serif font-bold shrink-0 group-hover:bg-amber-400 group-hover:text-[#26040c] transition-all">
-                      Open Gift ❤️
-                    </div>
-                  </div>
-
-                  {/* Card 10: National Princess Day Surprise (/princess-day) */}
+                  {/* Card 9: Princess Day Surprise (/princess-day) */}
                   <a
                     href="/princess-day"
                     onClick={(e) => {
@@ -915,26 +836,26 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti, onO
                         onOpenPrincessDay();
                       }
                     }}
-                    className="md:col-span-3 cursor-pointer bg-gradient-to-r from-[#4A1028] via-[#3B0C20] to-[#260613] border border-[#D9B56D]/45 rounded-[28px] p-5 hover:border-[#D9B56D]/85 transition-all duration-300 flex flex-col md:flex-row items-center justify-between min-h-[105px] gap-4 px-6 md:px-8 shadow-[0_8px_32px_rgba(74,16,40,0.35)] relative group overflow-hidden no-underline"
+                    className="md:col-span-3 cursor-pointer bg-gradient-to-r from-[#FFF5F8] via-[#FFE6F0] to-[#F5ECFF] border border-pink-300/70 rounded-[28px] p-5 hover:border-pink-400 transition-all duration-300 flex flex-col md:flex-row items-center justify-between min-h-[105px] gap-4 px-6 md:px-8 shadow-[0_10px_32px_rgba(236,72,153,0.18)] relative group overflow-hidden no-underline"
                   >
                     <div className="flex items-center gap-4 relative z-10">
-                      <div className="w-11 h-11 rounded-full bg-[#D9B56D]/15 border border-[#D9B56D]/40 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                        <Crown size={20} className="text-[#D9B56D]" />
+                      <div className="w-12 h-12 rounded-full bg-white/85 border border-pink-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs">
+                        <Crown size={22} className="text-pink-500" />
                       </div>
                       <div className="text-left">
-                        <span className="text-[10px] font-medium text-[#D9B56D] uppercase tracking-[0.2em]">
-                          National Princess Day · 18 November 2026
+                        <span className="text-[11px] font-semibold text-pink-600 uppercase tracking-[0.16em]">
+                          18 November – Princess Day · From Ruu
                         </span>
-                        <h4 className="font-serif text-base md:text-lg font-semibold text-[#FFF8EF] tracking-wide mt-1 leading-tight">
-                          For My Favourite Person, Vanshika Ji ❤️
+                        <h4 className="font-serif text-base md:text-lg font-bold text-[#4A1936] tracking-wide mt-0.5 leading-tight">
+                          Happy Princess Day, My Girl 👑
                         </h4>
-                        <p className="text-xs text-[#FFF0F3]/80 mt-1 max-w-[490px] leading-relaxed">
-                          A magical envelope, five heartfelt letters, a virtual rose garden, and a quiet fairytale surprise made just for My Mystic Signal.
+                        <p className="text-xs text-[#6B2D54] mt-1 max-w-[490px] leading-relaxed font-medium">
+                          A soft pink fairytale surprise made exclusively for Mystic Signal (Vanshika ji) with a ribbon envelope, sorry teddy &amp; love notes.
                         </p>
                       </div>
                     </div>
-                    <div className="px-5 py-2.5 rounded-full bg-[#D9B56D] text-[#350A1B] text-xs font-semibold tracking-wider uppercase shrink-0 group-hover:bg-[#E7C683] transition-colors whitespace-nowrap">
-                      Open Surprise ✨
+                    <div className="px-5 py-2.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-400 text-white text-xs font-semibold tracking-wide shrink-0 group-hover:shadow-md transition-all whitespace-nowrap">
+                      Open Your Surprise 💗
                     </div>
                   </a>
                 </div>
@@ -1497,17 +1418,6 @@ export default function LandingPage({ config, onUnlocked, onTriggerConfetti, onO
             </div>
           </div>
         </>
-      )}
-
-      {/* ─── HAPPY NAVRATRI & HEARTFELT APOLOGY MODAL OVERLAY ─── */}
-      {showNavratriModal && (
-        <div className="fixed inset-0 z-[70] overflow-y-auto bg-[#160208]/95 backdrop-blur-xl animate-fade-in">
-          <NavratriApologySection
-            isModal={true}
-            onClose={() => setShowNavratriModal(false)}
-            onTriggerConfetti={onTriggerConfetti}
-          />
-        </div>
       )}
 
     </div>

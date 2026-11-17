@@ -76,7 +76,7 @@ export default function App() {
 
   useEffect(() => {
     document.title = isPrincessDayRoute
-      ? 'Happy Princess Day, Vanshika Ji — Mystic Signal'
+      ? 'Happy Princess Day, My Girl 👑'
       : 'MYSTIC SIGNAL';
   }, [isPrincessDayRoute]);
 
@@ -273,9 +273,9 @@ export default function App() {
     return (
       <Suspense
         fallback={
-          <div className="min-h-screen w-full bg-[#240612] text-[#FFF8EF] flex flex-col items-center justify-center p-6 text-center font-serif">
-            <p className="text-lg italic text-[#F4A7B9]">
-              Preparing something special for Vanshika Ji...
+          <div className="min-h-screen w-full bg-gradient-to-b from-[#FFF5F8] via-[#FFE6F0] to-[#F5ECFF] text-[#4A1936] flex flex-col items-center justify-center p-6 text-center font-serif">
+            <p className="text-lg italic text-pink-600">
+              Preparing a little pink surprise for Vanshika ji... 🎀
             </p>
           </div>
         }
