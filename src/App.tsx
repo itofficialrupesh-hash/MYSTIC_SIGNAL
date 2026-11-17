@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { 
   Heart, Sparkles, Image as ImageIcon, Settings, 
   HelpCircle, Gift, Mail, BookOpen, Music as MusicIcon, 
-  Trash2, Plus, LogOut, Check 
+  Trash2, Plus, LogOut, Check, Crown 
 } from 'lucide-react';
 
 // Core Sub-components
@@ -22,6 +22,9 @@ import PeriodHub from './components/PeriodHub';
 import PeriodHubLock from './components/PeriodHubLock';
 import PrivateChat from './components/PrivateChat';
 import VirtualHug from './components/VirtualHug';
+import NavratriApologySection from './components/NavratriApologySection';
+
+const PrincessDayExperience = lazy(() => import('./components/princess-day/PrincessDayExperience'));
 
 // Types and Defaults
 import { LoveConfig, MemoryPhoto, StoryChapter, FavoriteMemory, OpenWhenLetter } from './types';
@@ -41,6 +44,42 @@ interface RisingHeart {
 }
 
 export default function App() {
+  // Client-side route state supporting direct /princess-day access & refresh
+  const [currentPath, setCurrentPath] = useState<string>(() => {
+    try {
+      return window.location.pathname || '/';
+    } catch {
+      return '/';
+    }
+  });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname || '/');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const normalizedPath = currentPath.replace(/\/+$/, '') || '/';
+  const isPrincessDayRoute = normalizedPath === '/princess-day';
+
+  const navigateTo = (targetPath: string) => {
+    try {
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({}, '', targetPath);
+      }
+    } catch {}
+    setCurrentPath(targetPath);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    document.title = isPrincessDayRoute
+      ? 'Happy Princess Day, Vanshika Ji — Mystic Signal'
+      : 'MYSTIC SIGNAL';
+  }, [isPrincessDayRoute]);
+
   // Authentication states
   const [isUnlocked, setIsUnlocked] = useState(false);
 
@@ -56,7 +95,7 @@ export default function App() {
   const [isAdminPassModalOpen, setIsAdminPassModalOpen] = useState(false);
   const [adminPassInput, setAdminPassInput] = useState('');
   const [adminPassError, setAdminPassError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'safekeep' | 'gallery' | 'secret-room' | 'bestie-zone' | 'period-hub' | 'chat'>('safekeep');
+  const [activeTab, setActiveTab] = useState<'safekeep' | 'gallery' | 'secret-room' | 'bestie-zone' | 'period-hub' | 'chat' | 'navratri'>('safekeep');
   const [homeSubView, setHomeSubView] = useState<'letters' | 'bestie'>('letters');
   const [heartsList, setHeartsList] = useState<RisingHeart[]>([]);
   const [isBestieZoneUnlocked, setIsBestieZoneUnlocked] = useState<boolean>(false);
@@ -229,6 +268,23 @@ export default function App() {
     triggerHeartsShower();
   };
 
+  // Dedicated /princess-day full-screen route (cleanly separated from landing player & footer)
+  if (isPrincessDayRoute) {
+    return (
+      <Suspense
+        fallback={
+          <div className="min-h-screen w-full bg-[#240612] text-[#FFF8EF] flex flex-col items-center justify-center p-6 text-center font-serif">
+            <p className="text-lg italic text-[#F4A7B9]">
+              Preparing something special for Vanshika Ji...
+            </p>
+          </div>
+        }
+      >
+        <PrincessDayExperience onBackHome={() => navigateTo('/')} />
+      </Suspense>
+    );
+  }
+
   return (
     <div id="app-root-layout" className="relative min-h-screen pb-20 overflow-x-hidden bg-gradient-to-br from-[#0a0712] via-[#050508] to-[#120a1c] text-zinc-100 transition-all duration-300">
       
@@ -269,6 +325,7 @@ export default function App() {
           config={config} 
           onUnlocked={handleMasterUnlocked}
           onTriggerConfetti={triggerHeartsShower}
+          onOpenPrincessDay={() => navigateTo('/princess-day')}
         />
       ) : (
         // AUTHENTICATED SECRET LAND
@@ -307,6 +364,19 @@ export default function App() {
 
             {/* Custom Settings Header Action Drawer */}
             <div className="flex flex-wrap gap-2.5 justify-center">
+              <a
+                href="/princess-day"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigateTo('/princess-day');
+                }}
+                className="px-4 py-2 bg-[#4A1028] hover:bg-[#611635] text-[#FFF8EF] text-xs font-bold rounded-2xl border border-[#D9B56D]/50 shadow-xs hover:shadow-md cursor-pointer transition-all flex items-center gap-1.5"
+                title="Open Princess Day Surprise for Vanshika Ji"
+              >
+                <Crown size={14} className="text-[#D9B56D]" />
+                <span>Princess Day 👑</span>
+              </a>
+
               <button
                 id="btn-creator-tools"
                 onClick={() => setShowAdmin(true)}
@@ -339,6 +409,7 @@ export default function App() {
           >
             {[
               { id: 'safekeep', label: '📬 Letters & Story', icon: <Mail size={13} /> },
+              { id: 'navratri', label: '🪔 Navratri & Apology', icon: <span className="text-xs">🌺</span> },
               { id: 'gallery', label: '📸 Polaroid Gallery', icon: <ImageIcon size={13} /> },
               { id: 'period-hub', label: '🌸 Period Hub', icon: <span className="text-xs">🌸</span> },
               { id: 'secret-room', label: '❤️ Favorite Room', icon: <Heart size={13} /> },
@@ -398,6 +469,39 @@ export default function App() {
 
                 {homeSubView === 'letters' ? (
                   <div className="space-y-8 animate-fade-in">
+                    {/* FESTIVE HIGHLIGHT BANNER: HAPPY NAVRATRI & HEARTFELT APOLOGY */}
+                    <div
+                      id="navratri-launch-banner"
+                      className="p-[1.5px] rounded-3xl bg-gradient-to-r from-amber-400 via-rose-500 to-amber-300 shadow-[0_0_25px_rgba(245,158,11,0.3)] relative overflow-hidden select-none hover:scale-[1.005] transition-all duration-300"
+                    >
+                      <div
+                        className="rounded-[22.5px] p-6 text-center space-y-3"
+                        style={{
+                          background:
+                            'radial-gradient(circle at 50% 0%, #4c091b 0%, #26040d 70%, #160207 100%)',
+                        }}
+                      >
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-400/15 border border-amber-300/40 rounded-full text-amber-200 font-extrabold text-[10px] uppercase tracking-widest">
+                          <span>🪔 ✨ JAI MATA DI • FESTIVE GIFT & APOLOGY ✨ 🌺</span>
+                        </div>
+                        <h3 className="font-serif text-xl md:text-2xl font-black text-amber-100 tracking-wide">
+                          Happy Navratri, Meri Devi Ji (Vanshika Ji) ❤️🙏🏻
+                        </h3>
+                        <p className="text-xs text-amber-100/85 max-w-lg mx-auto leading-relaxed font-serif italic">
+                          “Aaj ka din aapke naam, ek chhoti si wish aur dil se nikli hui ek maafi…” — Includes personal photo gallery & wishes for Vanshika Ji, Taruu, and Tanishq.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setActiveTab('navratri');
+                            triggerHeartsShower();
+                          }}
+                          className="px-6 py-2.5 rounded-full bg-gradient-to-r from-amber-400 via-rose-400 to-amber-300 hover:from-amber-300 hover:to-rose-300 text-[#26040c] text-xs font-serif font-black tracking-wide hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(251,191,36,0.45)] cursor-pointer inline-flex items-center gap-2"
+                        >
+                          <span>Open My Heart ❤️🪔</span>
+                        </button>
+                      </div>
+                    </div>
+
                     {/* BREATHTAKING HIGHLIGHT BANNER: JOURNEY OF MY HEART */}
                     <div 
                       id="bestie-launch-banner"
@@ -568,6 +672,12 @@ export default function App() {
               <div className="animate-fade-in max-w-4xl mx-auto space-y-6">
                 <PrivateChat onTriggerConfetti={triggerHeartsShower} />
                 <VirtualHug onTriggerConfetti={triggerHeartsShower} />
+              </div>
+            )}
+
+            {activeTab === 'navratri' && (
+              <div className="animate-fade-in max-w-5xl mx-auto">
+                <NavratriApologySection onTriggerConfetti={triggerHeartsShower} />
               </div>
             )}
           </main>
